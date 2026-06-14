@@ -1,0 +1,6 @@
+# macOS
+.DS_Store
+
+# Arquivos de controle dos scripts do Excalidraw
+scripts/.excalidraw.pid
+scripts/.excalidraw.log
