@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<title>NEXUS // TERMINAL — Design Reference</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link href="tokens.css" rel="stylesheet">
+<link href="components.css" rel="stylesheet">
+<style>
+  .sw{display:flex;flex-wrap:wrap;gap:10px}
+  .sw .chip{width:120px;border:1px solid var(--nx-line);padding:0;overflow:hidden;font-size:10px}
+  .sw .chip b{display:block;height:46px}
+  .sw .chip span{display:block;padding:6px 8px;color:var(--nx-txt-dim);letter-spacing:.05em}
+  .sec{margin:34px 0 14px;font-family:var(--nx-mono);font-size:11px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--nx-cyan)}
+  .note{font-size:11px;color:var(--nx-txt-dim);margin-bottom:14px;max-width:720px}
+  code{color:var(--nx-amber)}
+</style>
+</head>
+<body class="nx-root">
+<div class="nx-fx-grid"></div>
+<div class="nx-fx-glow a"></div><div class="nx-fx-glow b"></div><div class="nx-fx-glow c"></div>
+<div class="nx-fx-vig"></div><div class="nx-fx-scan"></div><div class="nx-fx-noise"></div><div class="nx-fx-flicker"></div>
+
+<div class="nx-wrap">
+  <header class="nx-header">
+    <div class="nx-brand">NEXUS<span class="slash">//</span><b>TERMINAL</b> <span class="nx-badge">REF</span></div>
+    <div class="nx-sys">
+      <div><span class="nx-live"></span>STYLE <b>GUIDE</b></div>
+      <div>UTC <b id="clock">--:--:--</b></div>
+    </div>
+  </header>
+
+  <div class="nx-ticker"><div class="run">
+    <span class="nx-tk"><span class="sym">CYAN</span><span class="val">#00F5D4</span><span class="nx-up">▲ PRIMARY</span></span>
+    <span class="nx-tk"><span class="sym">MAGENTA</span><span class="val">#FF2D95</span><span class="nx-dn">▼ PAIR</span></span>
+    <span class="nx-tk"><span class="sym">FONT</span><span class="val">ORBITRON / JETBRAINS MONO</span></span>
+    <span class="nx-tk"><span class="sym">CYAN</span><span class="val">#00F5D4</span><span class="nx-up">▲ PRIMARY</span></span>
+    <span class="nx-tk"><span class="sym">MAGENTA</span><span class="val">#FF2D95</span><span class="nx-dn">▼ PAIR</span></span>
+    <span class="nx-tk"><span class="sym">FONT</span><span class="val">ORBITRON / JETBRAINS MONO</span></span>
+  </div></div>
+
+  <nav class="nx-tabs">
+    <button class="nx-tab active"><span class="n">01</span>OVERVIEW</button>
+    <button class="nx-tab"><span class="n">02</span>COMPONENTS</button>
+    <button class="nx-tab"><span class="n">03</span>TOKENS</button>
+  </nav>
+
+  <div class="sec">Paleta</div>
+  <div class="sw">
+    <div class="chip"><b style="background:#05060a"></b><span>--nx-bg</span></div>
+    <div class="chip"><b style="background:#080b13"></b><span>--nx-panel</span></div>
+    <div class="chip"><b style="background:#00f5d4"></b><span>--nx-cyan</span></div>
+    <div class="chip"><b style="background:#ff2d95"></b><span>--nx-magenta</span></div>
+    <div class="chip"><b style="background:#ffb000"></b><span>--nx-amber</span></div>
+    <div class="chip"><b style="background:#9b5cff"></b><span>--nx-violet</span></div>
+    <div class="chip"><b style="background:#2de2ff"></b><span>--nx-blue</span></div>
+    <div class="chip"><b style="background:#39ff88"></b><span>--nx-green</span></div>
+    <div class="chip"><b style="background:#ff3b6b"></b><span>--nx-red</span></div>
+  </div>
+
+  <div class="sec">Tipografia</div>
+  <p class="note">Display: <code>Orbitron</code> (logo, KPIs, números grandes). Corpo/UI/dados: <code>JetBrains Mono</code>.</p>
+  <div style="font-family:var(--nx-disp);font-weight:900;font-size:38px;color:#fff;text-shadow:var(--nx-glow-cyan)">NEXUS DISPLAY 0123456789</div>
+  <div style="font-family:var(--nx-mono);font-size:14px;color:var(--nx-txt);margin-top:8px">JetBrains Mono — corpo de texto e dados tabulares 0123456789</div>
+
+  <div class="sec">KPIs &amp; números</div>
+  <div class="nx-grid">
+    <div class="nx-col-3"><div class="nx-panel nx-kpi"><span class="nx-br tl"></span><span class="nx-br tr"></span><span class="nx-br bl"></span><span class="nx-br br2"></span>
+      <div class="lab">Receita total</div><div class="val">$3.13M</div><div class="sub"><b>▲ 12.4%</b> vs ano ant.</div></div></div>
+    <div class="nx-col-3"><div class="nx-panel nx-kpi mag"><span class="nx-br tl"></span><span class="nx-br tr"></span><span class="nx-br bl"></span><span class="nx-br br2"></span>
+      <div class="lab">Churn</div><div class="val">8.9%</div><div class="sub">clientes inativos</div></div></div>
+    <div class="nx-col-3"><div class="nx-panel nx-nblock"><span class="nx-br tl"></span><span class="nx-br tr"></span><span class="nx-br bl"></span><span class="nx-br br2"></span>
+      <div class="big">25.000</div><div class="cap">Pedidos</div></div></div>
+    <div class="nx-col-3"><div class="nx-panel nx-nblock mag"><span class="nx-br tl"></span><span class="nx-br tr"></span><span class="nx-br bl"></span><span class="nx-br br2"></span>
+      <div class="big">8.000</div><div class="cap">Clientes</div></div></div>
+  </div>
+
+  <div class="sec">Painel HUD + barras</div>
+  <div class="nx-grid">
+    <div class="nx-col-6"><div class="nx-panel"><span class="nx-br tl"></span><span class="nx-br tr"></span><span class="nx-br bl"></span><span class="nx-br br2"></span>
+      <div class="nx-phead"><span class="nx-led"></span><h3>Receita por categoria</h3><span class="nx-tag">RANK</span></div>
+      <div class="nx-bars">
+        <div class="nx-bar"><span class="nm">Electronics</span><span class="track"><span class="fill" style="width:100%"></span></span><span class="vv">$540k</span></div>
+        <div class="nx-bar"><span class="nm">Clothing</span><span class="track"><span class="fill" style="width:78%"></span></span><span class="vv">$421k</span></div>
+        <div class="nx-bar"><span class="nm">Home &amp; Kitchen</span><span class="track"><span class="fill" style="width:61%"></span></span><span class="vv">$329k</span></div>
+        <div class="nx-bar"><span class="nm">Books</span><span class="track"><span class="fill amber" style="width:44%"></span></span><span class="vv">$238k</span></div>
+        <div class="nx-bar"><span class="nm">Sports</span><span class="track"><span class="fill amber" style="width:33%"></span></span><span class="vv">$178k</span></div>
+      </div>
+    </div></div>
+    <div class="nx-col-6"><div class="nx-panel mag"><span class="nx-br tl"></span><span class="nx-br tr"></span><span class="nx-br bl"></span><span class="nx-br br2"></span>
+      <div class="nx-phead"><span class="nx-led"></span><h3>Top SKUs // devolução</h3><span class="nx-tag">RISK</span></div>
+      <table class="nx-table"><thead><tr><th>SKU</th><th class="r">PED</th><th class="r">RECEITA</th><th class="r">DEV%</th></tr></thead>
+      <tbody>
+        <tr><td><span class="pn">Portable Charger</span> <span class="nx-pill">Electronics</span></td><td class="r">466</td><td class="r" style="color:#fff">$58k</td><td class="r nx-good">4%</td></tr>
+        <tr><td><span class="pn">Money Belt</span> <span class="nx-pill">Travel</span></td><td class="r">120</td><td class="r" style="color:#fff">$9k</td><td class="r nx-hot">17%</td></tr>
+        <tr><td><span class="pn">USB-C Hub</span> <span class="nx-pill">Electronics</span></td><td class="r">210</td><td class="r" style="color:#fff">$30k</td><td class="r nx-hot">12%</td></tr>
+      </tbody></table>
+    </div></div>
+  </div>
+
+  <footer class="nx-footer">
+    <span>NEXUS // TERMINAL — design reference</span>
+    <span>tokens.css · components.css · chart-theme.js</span>
+  </footer>
+</div>
+
+<script>
+  // tiny live clock (UTC) — the terminal touch
+  setInterval(()=>{const d=new Date();const p=n=>String(n).padStart(2,'0');
+    const el=document.getElementById('clock');if(el)el.textContent=`${p(d.getUTCHours())}:${p(d.getUTCMinutes())}:${p(d.getUTCSeconds())}`;},1000);
+  // tab demo (visual only)
+  document.querySelectorAll('.nx-tab').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('.nx-tab').forEach(t=>t.classList.remove('active'));b.classList.add('active');}));
+</script>
+</body></html>

@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<title>E-commerce Insights — Dashboard</title>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+
+<!-- Vendored from design-system: Tailwind runtime, Lucide, Iconify, Geist font -->
+<script src="../design-system/assets/resource_3fa48481346f.js"></script>
+<script src="../design-system/assets/lucide_latest_2eebd0ebe8c2.js"></script>
+<script src="../design-system/assets/iconify_654a1ef798a3.js"></script>
+<link href="../design-system/assets/css2_86e10c4bcbd4.css" rel="stylesheet"/>
+<style>.font-geist{font-family:'Geist',sans-serif !important;}</style>
+
+<!-- border-gradient helper (identical to design-system) -->
+<style id="border-gradient-shared-style">
+[style*="--border-gradient"]::before{
+  content:"";position:absolute;inset:0;padding:1px;
+  border-radius:var(--border-radius-before,inherit);
+  -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
+  -webkit-mask-composite:xor;mask-composite:exclude;
+  background:var(--border-gradient);pointer-events:none;
+}
+body{font-family:'Geist',sans-serif;}
+.tab-btn[data-active="true"]{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.35);color:#fff;}
+::-webkit-scrollbar{height:8px;width:8px;}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:8px;}
+/* hand-drawn chart helpers */
+.bar-h{transition:width .6s cubic-bezier(.22,1,.36,1);}
+.bar-v{transition:height .6s cubic-bezier(.22,1,.36,1);}
+.hoverable{transition:filter .15s,opacity .15s,transform .15s;}
+.hoverable:hover{filter:brightness(1.25);}
+.dot{transition:r .15s;}
+.spark path.area{opacity:.18;}
+#tooltip{position:fixed;z-index:50;pointer-events:none;opacity:0;transform:translate(-50%,-115%);
+  background:#0a0a0a;border:1px solid rgba(255,255,255,.18);border-radius:10px;padding:6px 10px;
+  font-size:12px;color:#fff;white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,.5);transition:opacity .12s;}
+</style>
+</head>
+<body class="min-h-screen bg-neutral-950 text-white antialiased font-geist">
+
+<!-- Animated background (component from design-system) -->
+<div class="aura-background-component fixed top-0 w-full h-screen -z-10 saturate-50" data-alpha-mask="80" style="mask-image:linear-gradient(to bottom,transparent,black 0%,black 80%,transparent);-webkit-mask-image:linear-gradient(to bottom,transparent,black 0%,black 80%,transparent)">
+  <div class="absolute w-full h-full left-0 top-0 -z-10" data-us-project="qpSlPSWA2bdkUAYztz8z"></div>
+  <script type="text/javascript">
+    !function(){if(!window.UnicornStudio){window.UnicornStudio={isInitialized:!1};var i=document.createElement("script");i.src="https://cdn.jsdelivr.net/gh/hiunicornstudio/unicornstudio.js@v1.4.29/dist/unicornStudio.umd.js",i.onload=function(){window.UnicornStudio.isInitialized||(UnicornStudio.init(),window.UnicornStudio.isInitialized=!0)},(document.head||document.body).appendChild(i)}}();
+  </script>
+</div>
+
+<div id="tooltip"></div>
+
+<div class="min-h-screen flex flex-col">
+<main class="flex-1">
+<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+
+  <!-- Header -->
+  <header class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
+    <div class="space-y-1">
+      <p class="text-xs font-medium uppercase tracking-[0.18em] text-cyan-300/80">E-commerce Analytics</p>
+      <h1 class="text-[26px] sm:text-[32px] font-semibold tracking-tight">Insights Dashboard</h1>
+      <p class="text-sm text-neutral-400" id="subtitle">Carregando dados…</p>
+    </div>
+    <nav class="flex flex-wrap gap-2" id="tabs">
+      <button class="tab-btn inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-neutral-300 hover:bg-white/10 transition" data-tab="overview" data-active="true">
+        <svg class="iconify h-4 w-4" data-icon="solar:chart-2-bold-duotone"></svg>Visão Geral</button>
+      <button class="tab-btn inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-neutral-300 hover:bg-white/10 transition" data-tab="sales">
+        <svg class="iconify h-4 w-4" data-icon="solar:dollar-minimalistic-bold-duotone"></svg>Vendas</button>
+      <button class="tab-btn inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-neutral-300 hover:bg-white/10 transition" data-tab="customers">
+        <svg class="iconify h-4 w-4" data-icon="solar:users-group-rounded-bold-duotone"></svg>Clientes</button>
+      <button class="tab-btn inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-neutral-300 hover:bg-white/10 transition" data-tab="products">
+        <svg class="iconify h-4 w-4" data-icon="solar:box-bold-duotone"></svg>Produtos</button>
+    </nav>
+  </header>
+
+  <!-- KPI row -->
+  <section id="kpis" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 mb-6"></section>
+
+  <!-- OVERVIEW -->
+  <section data-panel="overview" class="grid grid-cols-1 md:grid-cols-8 lg:grid-cols-12 gap-4">
+    <div class="md:col-span-8 lg:col-span-8 card"><h3 class="ct">Receita mensal</h3><div id="ov_revenue"></div></div>
+    <div class="md:col-span-8 lg:col-span-4 card"><h3 class="ct">Mix por dispositivo</h3><div id="ov_device"></div></div>
+    <div class="md:col-span-4 lg:col-span-7 card"><h3 class="ct">Receita por categoria</h3><div id="ov_category"></div></div>
+    <div class="md:col-span-4 lg:col-span-5 card"><h3 class="ct">Pedidos vs. novos clientes</h3><div id="ov_orders_new"></div></div>
+    <div class="md:col-span-8 lg:col-span-12 card"><h3 class="ct">Receita por método de pagamento</h3><div id="ov_payment"></div></div>
+  </section>
+
+  <!-- SALES -->
+  <section data-panel="sales" class="hidden grid-cols-1 md:grid-cols-8 lg:grid-cols-12 gap-4">
+    <div class="md:col-span-8 lg:col-span-8 card"><h3 class="ct">Receita &amp; ticket médio (AOV)</h3><div id="s_rev_aov"></div></div>
+    <div class="md:col-span-8 lg:col-span-4 card"><h3 class="ct">Status dos pedidos</h3><div id="s_status"></div></div>
+    <div class="md:col-span-8 lg:col-span-12 card"><h3 class="ct">Sazonalidade — receita por ano × mês</h3><div id="s_season"></div></div>
+    <div class="md:col-span-4 lg:col-span-7 card"><h3 class="ct">Taxa de devolução mensal <span class="text-[11px] text-amber-300/80">· recalculada do orders.csv</span></h3><div id="s_return"></div></div>
+    <div class="md:col-span-4 lg:col-span-5 card"><h3 class="ct">Receita por ano</h3><div id="s_year"></div></div>
+    <div class="md:col-span-4 lg:col-span-6 card"><h3 class="ct">Pedidos por dia da semana</h3><div id="s_dow"></div></div>
+    <div class="md:col-span-4 lg:col-span-6 card"><h3 class="ct">Prazo médio de entrega por categoria</h3><div id="s_delivery"></div></div>
+  </section>
+
+  <!-- CUSTOMERS -->
+  <section data-panel="customers" class="hidden grid-cols-1 md:grid-cols-8 lg:grid-cols-12 gap-4">
+    <div class="md:col-span-4 lg:col-span-4 card"><h3 class="ct">Faixa etária</h3><div id="c_age"></div></div>
+    <div class="md:col-span-4 lg:col-span-4 card"><h3 class="ct">Gênero</h3><div id="c_gender"></div></div>
+    <div class="md:col-span-8 lg:col-span-4 card"><h3 class="ct">Tier de assinatura</h3><div id="c_tier"></div></div>
+    <div class="md:col-span-8 lg:col-span-7 card"><h3 class="ct">Top países por nº de clientes</h3><div id="c_country"></div></div>
+    <div class="md:col-span-8 lg:col-span-5 card"><h3 class="ct">Canal de aquisição × churn</h3><div id="c_channel"></div></div>
+    <div class="md:col-span-4 lg:col-span-4 card"><h3 class="ct">RFM · Recência</h3><div id="c_recency"></div></div>
+    <div class="md:col-span-4 lg:col-span-4 card"><h3 class="ct">RFM · Frequência</h3><div id="c_frequency"></div></div>
+    <div class="md:col-span-8 lg:col-span-4 card"><h3 class="ct">RFM · Valor (LTV)</h3><div id="c_ltv"></div></div>
+  </section>
+
+  <!-- PRODUCTS -->
+  <section data-panel="products" class="hidden grid-cols-1 md:grid-cols-8 lg:grid-cols-12 gap-4">
+    <div class="md:col-span-8 lg:col-span-7 card"><h3 class="ct">Top 15 produtos por receita</h3><div id="p_top"></div></div>
+    <div class="md:col-span-8 lg:col-span-5 card"><h3 class="ct">Preço médio por categoria</h3><div id="p_price"></div></div>
+    <div class="md:col-span-8 lg:col-span-12 card"><h3 class="ct">Avaliação × devolução <span class="text-[11px] text-neutral-400">· tamanho da bolha = nº de pedidos</span></h3><div id="p_scatter"></div></div>
+    <div class="md:col-span-8 lg:col-span-12 card"><h3 class="ct">Maiores taxas de devolução</h3><div id="p_returns"></div></div>
+  </section>
+
+  <footer class="mt-8 pt-4 border-t border-white/10 text-xs text-neutral-500">
+    Fonte: <span class="font-geist">dataset/*.csv</span> · agregado por <span class="font-geist">scripts/aggregate.py</span> · visual 100% design-system, gráficos hand-drawn (sem biblioteca)
+  </footer>
+
+</div>
+</main>
+</div>
+
+<script>
+// ---------- card styling (design-system glassmorphism) ----------
+document.querySelectorAll('.card').forEach(el=>{
+  el.className += ' bg-gradient-to-br from-white/10 to-white/0 rounded-3xl p-5 shadow-lg shadow-neutral-900/50 backdrop-blur-lg';
+  el.setAttribute('style','position:relative;--border-gradient:linear-gradient(180deg,rgba(255,255,255,0.12),rgba(255,255,255,0));--border-radius-before:24px');
+});
+document.querySelectorAll('.ct').forEach(el=>{ el.className += ' text-sm font-semibold tracking-tight text-neutral-200 mb-4'; });
+
+// ---------- palette + formatters ----------
+const PAL=['#22d3ee','#34d399','#facc15','#38bdf8','#fbbf24','#a78bfa','#f472b6','#4ade80','#fb923c','#60a5fa','#e879f9','#2dd4bf','#fb7185','#c084fc'];
+const fmtUSD = n=>'$'+Number(n).toLocaleString('en-US',{maximumFractionDigits:0});
+const fmtK = n=> n>=1e6 ? '$'+(n/1e6).toFixed(2)+'M' : n>=1000 ? '$'+(n/1000).toFixed(n>=1e4?0:1)+'k' : '$'+Math.round(n);
+const num = n=>Number(n).toLocaleString('pt-BR');
+const esc = s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+// ---------- shared tooltip ----------
+const tip=document.getElementById('tooltip');
+function bindTip(el,html){
+  el.addEventListener('mousemove',e=>{tip.innerHTML=html;tip.style.left=e.clientX+'px';tip.style.top=e.clientY+'px';tip.style.opacity=1;});
+  el.addEventListener('mouseleave',()=>{tip.style.opacity=0;});
+}
+
+// ================= HAND-DRAWN CHART PRIMITIVES =================
+// All charts are plain HTML/SVG + Tailwind — no chart library.
+
+// Line / area chart (SVG, viewBox-scaled so it works inside hidden tabs)
+function lineChart(el, {series, categories, height=260, area=true, yFmt=fmtK, valFmt=fmtUSD, dualAxis=false}){
+  const VW=1000, P={l:54,r:dualAxis?54:16,t:14,b:34};
+  const n=categories.length;
+  const xs=i=> P.l + (n<=1?0:i/(n-1))*(VW-P.l-P.r);
+  // per-series scale: dualAxis → each series normalized to its own min/max; else shared
+  const scaleOf=s=>{ let mx=Math.max(...s.data), mn=Math.min(0,...s.data); const sp=(mx-mn)||1; mx+=sp*0.08; return {mx,mn}; };
+  const shared=(()=>{const all=series.flatMap(s=>s.data);let mx=Math.max(...all),mn=Math.min(0,...all);const sp=(mx-mn)||1;mx+=sp*0.08;return{mx,mn};})();
+  const sc=series.map(s=>dualAxis?scaleOf(s):shared);
+  const ysOf=(v,si)=> P.t + (1-(v-sc[si].mn)/((sc[si].mx-sc[si].mn)||1))*(height-P.t-P.b);
+  const min=shared.mn,max=shared.mx;
+  const ys=v=>ysOf(v,0);
+  const GL=4;
+  let grid='', ylab='';
+  for(let g=0; g<=GL; g++){
+    const y=P.t+(1-g/GL)*(height-P.t-P.b);
+    grid+=`<line x1="${P.l}" y1="${y}" x2="${VW-P.r}" y2="${y}" stroke="rgba(255,255,255,.08)" stroke-width="1" vector-effect="non-scaling-stroke"/>`;
+    const lval=sc[0].mn+(sc[0].mx-sc[0].mn)*g/GL;
+    ylab+=`<div style="position:absolute;left:0;top:${(y/height*100)}%;transform:translateY(-50%);font-size:10px;color:#71717a">${yFmt(lval)}</div>`;
+    if(dualAxis&&series[1]){const rval=sc[1].mn+(sc[1].mx-sc[1].mn)*g/GL;
+      ylab+=`<div style="position:absolute;right:0;top:${(y/height*100)}%;transform:translateY(-50%);font-size:10px;color:${series[1].color}">${(series[1].yFmt||yFmt)(rval)}</div>`;}
+  }
+  let paths='', dots='';
+  series.forEach((s,si)=>{
+    const pts=s.data.map((v,i)=>`${xs(i)},${ysOf(v,si)}`).join(' ');
+    if(area&&si===0){
+      const base=ysOf(sc[si].mn,si);
+      const ap=`M ${xs(0)},${base} L `+s.data.map((v,i)=>`${xs(i)},${ysOf(v,si)}`).join(' L ')+` L ${xs(n-1)},${base} Z`;
+      paths+=`<path class="area" d="${ap}" fill="${s.color}"/>`;
+    }
+    paths+=`<polyline points="${pts}" fill="none" stroke="${s.color}" stroke-width="2.5" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/>`;
+  });
+  // sparse x labels (~7)
+  const step=Math.max(1,Math.ceil(n/7));
+  let xlab='';
+  for(let i=0;i<n;i+=step){ xlab+=`<span style="position:absolute;left:${xs(i)/VW*100}%;transform:translateX(-50%)">${esc(categories[i])}</span>`; }
+  // hover hit-areas
+  let hit='';
+  for(let i=0;i<n;i++){
+    const cx=xs(i)/VW*100;
+    const rows=series.map(s=>`${s.name}: ${valFmt(s.data[i])}`).join('<br>');
+    hit+=`<div class="hit" data-i="${i}" style="position:absolute;left:${cx}%;top:0;width:${100/n}%;height:100%;transform:translateX(-50%);cursor:pointer"></div>`;
+    series.forEach((s,si)=>{ dots+=`<circle class="dot" cx="${xs(i)}" cy="${ysOf(s.data[i],si)}" r="0" fill="${s.color}" data-i="${i}"/>`; });
+  }
+  const legend = series.length>1 ? `<div class="flex gap-4 mb-2 text-xs text-neutral-300">`+series.map(s=>`<span class="inline-flex items-center gap-1.5"><i style="width:10px;height:10px;border-radius:3px;background:${s.color};display:inline-block"></i>${esc(s.name)}</span>`).join('')+`</div>` : '';
+  el.innerHTML = legend + `<div class="relative" style="height:${height}px">
+    <svg viewBox="0 0 ${VW} ${height}" preserveAspectRatio="none" style="width:100%;height:${height}px">${grid}${paths}${dots}</svg>
+    ${ylab}
+    <div style="position:absolute;inset:0">${hit}</div>
+    <div style="position:absolute;left:0;right:0;bottom:-2px;height:14px;font-size:10px;color:#71717a">${xlab}</div>
+  </div>`;
+  // interactivity
+  const svg=el.querySelector('svg');
+  el.querySelectorAll('.hit').forEach(h=>{
+    const i=+h.dataset.i;
+    const rows=series.map(s=>`<span style="color:${s.color}">●</span> ${esc(s.name)}: ${valFmt(s.data[i])}`).join('<br>');
+    bindTip(h,`<b>${esc(categories[i])}</b><br>${rows}`);
+    h.addEventListener('mouseenter',()=>svg.querySelectorAll(`.dot[data-i="${i}"]`).forEach(d=>d.setAttribute('r',4)));
+    h.addEventListener('mouseleave',()=>svg.querySelectorAll(`.dot[data-i="${i}"]`).forEach(d=>d.setAttribute('r',0)));
+  });
+}
+
+// Horizontal bars
+function hBars(el, {data, color, height=300, valFmt=fmtUSD, distributed=false}){
+  const max=Math.max(...data.map(d=>d.value))||1;
+  el.innerHTML=`<div class="flex flex-col justify-center gap-2" style="min-height:${height}px">`+data.map((d,i)=>{
+    const c = distributed ? PAL[i%PAL.length] : color;
+    const w=(d.value/max*100).toFixed(1);
+    return `<div class="flex items-center gap-3 group">
+      <div class="w-24 shrink-0 text-[11px] text-neutral-300 text-right truncate" title="${esc(d.name)}">${esc(d.name)}</div>
+      <div class="flex-1 h-5 rounded-full bg-white/5 overflow-hidden relative">
+        <div class="bar-h hoverable h-full rounded-full" style="width:${w}%;background:${c}"></div>
+      </div>
+      <div class="w-16 shrink-0 text-[11px] text-neutral-400 tabular-nums">${valFmt(d.value)}</div>
+    </div>`;
+  }).join('')+`</div>`;
+  // animate from 0
+  requestAnimationFrame(()=>{const bars=el.querySelectorAll('.bar-h');bars.forEach(b=>{const w=b.style.width;b.style.width='0';requestAnimationFrame(()=>b.style.width=w);});});
+  el.querySelectorAll('.group').forEach((g,i)=>bindTip(g,`<b>${esc(data[i].name)}</b><br>${valFmt(data[i].value)}`));
+}
+
+// Vertical bars
+function vBars(el, {data, color, height=280, valFmt=num, distributed=false, rotate=false}){
+  const max=Math.max(...data.map(d=>d.value))||1;
+  const plot=height-30;
+  el.innerHTML=`<div class="flex items-end gap-2" style="height:${plot}px">`+data.map((d,i)=>{
+    const c=distributed?PAL[i%PAL.length]:color;
+    const h=(d.value/max*100).toFixed(1);
+    return `<div class="flex-1 flex flex-col items-center justify-end h-full group">
+      <div class="bar-v hoverable w-full rounded-t-lg" style="height:${h}%;background:${c};min-width:8px"></div>
+    </div>`;
+  }).join('')+`</div>`
+   +`<div class="flex gap-2 mt-2">`+data.map(d=>`<div class="flex-1 text-center text-[10px] text-neutral-400 leading-tight ${rotate?'truncate':''}" title="${esc(d.name)}">${esc(d.name)}</div>`).join('')+`</div>`;
+  requestAnimationFrame(()=>{el.querySelectorAll('.bar-v').forEach(b=>{const h=b.style.height;b.style.height='0';requestAnimationFrame(()=>b.style.height=h);});});
+  el.querySelectorAll('.group').forEach((g,i)=>bindTip(g,`<b>${esc(data[i].name)}</b><br>${valFmt(data[i].value)}`));
+}
+
+// Grouped vertical bars (2 series) — e.g. tier customers vs spend
+function groupedBars(el, {data, series, height=280, fmts}){
+  const maxes=series.map(s=>Math.max(...data.map(d=>d[s.key]))||1);
+  const plot=height-30;
+  el.innerHTML=`<div class="flex gap-4 mb-3 text-xs text-neutral-300">`+series.map(s=>`<span class="inline-flex items-center gap-1.5"><i style="width:10px;height:10px;border-radius:3px;background:${s.color};display:inline-block"></i>${esc(s.name)}</span>`).join('')+`</div>`
+   +`<div class="flex items-end gap-3" style="height:${plot}px">`+data.map((d,i)=>{
+      const bars=series.map((s,si)=>{
+        const h=(d[s.key]/maxes[si]*100).toFixed(1);
+        return `<div class="bar-v hoverable flex-1 rounded-t-md" style="height:${h}%;background:${s.color};min-width:6px" data-tip="${esc(d.name)} — ${esc(s.name)}: ${fmts[si](d[s.key])}"></div>`;
+      }).join('');
+      return `<div class="flex-1 flex flex-col justify-end h-full"><div class="flex items-end gap-1 h-full">${bars}</div></div>`;
+    }).join('')+`</div>`
+   +`<div class="flex gap-3 mt-2">`+data.map(d=>`<div class="flex-1 text-center text-[10px] text-neutral-400 truncate" title="${esc(d.name)}">${esc(d.name)}</div>`).join('')+`</div>`;
+  requestAnimationFrame(()=>{el.querySelectorAll('.bar-v').forEach(b=>{const h=b.style.height;b.style.height='0';requestAnimationFrame(()=>b.style.height=h);});});
+  el.querySelectorAll('[data-tip]').forEach(b=>bindTip(b,b.dataset.tip));
+}
+
+// Donut (SVG arcs)
+function donut(el, {data, height=260, centerTop, centerSub, valFmt=num}){
+  const total=data.reduce((a,d)=>a+d.value,0)||1;
+  const R=70,C=90,CIRC=2*Math.PI*R; let off=0; let segs='';
+  data.forEach((d,i)=>{
+    const frac=d.value/total, len=frac*CIRC, c=d.color||PAL[i%PAL.length];
+    segs+=`<circle cx="${C}" cy="${C}" r="${R}" fill="none" stroke="${c}" stroke-width="26"
+      stroke-dasharray="${len} ${CIRC-len}" stroke-dashoffset="${-off}"
+      transform="rotate(-90 ${C} ${C})" class="hoverable" data-tip="${esc(d.name)}: ${valFmt(d.value)} (${(frac*100).toFixed(1)}%)"/>`;
+    off+=len;
+  });
+  const legend=data.map((d,i)=>`<div class="flex items-center justify-between gap-2 text-xs py-0.5">
+    <span class="inline-flex items-center gap-2 text-neutral-300"><i style="width:10px;height:10px;border-radius:3px;background:${d.color||PAL[i%PAL.length]};display:inline-block"></i>${esc(d.name)}</span>
+    <span class="text-neutral-400 tabular-nums">${(d.value/total*100).toFixed(1)}%</span></div>`).join('');
+  el.innerHTML=`<div class="flex items-center gap-4 flex-wrap" style="min-height:${height}px">
+    <div class="relative shrink-0" style="width:180px;height:180px">
+      <svg viewBox="0 0 180 180" style="width:180px;height:180px">${segs}</svg>
+      <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+        <div class="text-xl font-semibold tracking-tight">${centerTop||num(total)}</div>
+        <div class="text-[11px] text-neutral-400">${centerSub||''}</div>
+      </div>
+    </div>
+    <div class="flex-1 min-w-[140px]">${legend}</div>
+  </div>`;
+  el.querySelectorAll('[data-tip]').forEach(s=>bindTip(s,s.dataset.tip));
+}
+
+// Heatmap (year × month)
+function heatmap(el, {rows, months, valFmt=fmtUSD}){
+  const all=rows.flatMap(r=>r.values).filter(v=>v>0);
+  const max=Math.max(...all)||1, min=Math.min(...all)||0;
+  let html=`<div class="overflow-x-auto"><table class="w-full border-separate" style="border-spacing:4px"><thead><tr><th></th>`+
+    months.map(m=>`<th class="text-[10px] font-medium text-neutral-500">${m}</th>`).join('')+`</tr></thead><tbody>`;
+  rows.forEach(r=>{
+    html+=`<tr><td class="text-[11px] text-neutral-400 pr-2 text-right">${r.year}</td>`+
+      r.values.map((v,i)=>{
+        if(v<=0) return `<td><div class="rounded-md" style="height:26px;background:rgba(255,255,255,.04)"></div></td>`;
+        const t=(v-min)/((max-min)||1), op=(0.18+t*0.82).toFixed(2);
+        return `<td><div class="rounded-md hoverable" style="height:26px;background:rgba(34,211,238,${op})" data-tip="${months[i]} ${r.year}: ${valFmt(v)}"></div></td>`;
+      }).join('')+`</tr>`;
+  });
+  html+=`</tbody></table></div>`;
+  el.innerHTML=html;
+  el.querySelectorAll('[data-tip]').forEach(c=>bindTip(c,c.dataset.tip));
+}
+
+// Combo: vertical bars + overlay line (orders vs new customers)
+function combo(el, {categories, bar, line, height=300}){
+  const VW=1000,P={l:46,r:16,t:14,b:30},n=categories.length;
+  const plot=height-P.b;
+  const barMax=Math.max(...bar.data)||1, lineMax=Math.max(...line.data)||1;
+  const xs=i=>P.l+(n<=1?0:i/(n-1))*(VW-P.l-P.r);
+  const lys=v=>P.t+(1-v/(lineMax*1.1))*(plot-P.t);
+  // bars as HTML, line as SVG overlay
+  let bars=bar.data.map((v,i)=>{
+    const h=(v/barMax*100).toFixed(1);
+    return `<div class="flex-1 flex items-end justify-center h-full"><div class="bar-v hoverable w-[60%] rounded-t" style="height:${h}%;background:${bar.color}" data-tip="${esc(categories[i])}<br>${esc(bar.name)}: ${num(v)}<br>${esc(line.name)}: ${num(line.data[i])}"></div></div>`;
+  }).join('');
+  const lpts=line.data.map((v,i)=>`${xs(i)},${lys(v)}`).join(' ');
+  const step=Math.max(1,Math.ceil(n/7)); let xlab='';
+  for(let i=0;i<n;i+=step) xlab+=`<span style="position:absolute;left:${xs(i)/VW*100}%;transform:translateX(-50%)">${esc(categories[i])}</span>`;
+  el.innerHTML=`<div class="flex gap-4 mb-2 text-xs text-neutral-300">
+      <span class="inline-flex items-center gap-1.5"><i style="width:10px;height:10px;border-radius:3px;background:${bar.color};display:inline-block"></i>${esc(bar.name)}</span>
+      <span class="inline-flex items-center gap-1.5"><i style="width:14px;height:3px;border-radius:2px;background:${line.color};display:inline-block"></i>${esc(line.name)}</span>
+    </div>
+    <div class="relative" style="height:${height}px">
+      <div class="flex items-end gap-1 absolute left-0 right-0" style="top:14px;height:${plot-14}px;padding:0 ${P.r}px 0 ${P.l}px">${bars}</div>
+      <svg viewBox="0 0 ${VW} ${height}" preserveAspectRatio="none" style="width:100%;height:${height}px;position:absolute;inset:0;pointer-events:none">
+        <polyline points="${lpts}" fill="none" stroke="${line.color}" stroke-width="2.5" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>
+      </svg>
+      <div style="position:absolute;left:0;right:0;bottom:0;height:14px;font-size:10px;color:#71717a">${xlab}</div>
+    </div>`;
+  requestAnimationFrame(()=>{el.querySelectorAll('.bar-v').forEach(b=>{const h=b.style.height;b.style.height='0';requestAnimationFrame(()=>b.style.height=h);});});
+  el.querySelectorAll('[data-tip]').forEach(b=>bindTip(b,b.dataset.tip));
+}
+
+// Scatter / bubble (rating × return, size = orders)
+function scatter(el, {points, height=360, xLabel, yLabel, xMin, xMax}){
+  const VW=1000,P={l:54,r:20,t:16,b:40};
+  const ys=points.map(p=>p.y); const yMax=Math.max(...ys)*1.1||1, yMin=0;
+  const zMax=Math.max(...points.map(p=>p.z))||1;
+  const xx=v=>P.l+((v-xMin)/((xMax-xMin)||1))*(VW-P.l-P.r);
+  const yy=v=>P.t+(1-(v-yMin)/((yMax-yMin)||1))*(height-P.t-P.b);
+  let grid='',ylab='';
+  for(let g=0;g<=4;g++){const val=yMin+(yMax-yMin)*g/4,y=yy(val);
+    grid+=`<line x1="${P.l}" y1="${y}" x2="${VW-P.r}" y2="${y}" stroke="rgba(255,255,255,.08)" vector-effect="non-scaling-stroke"/>`;
+    ylab+=`<div style="position:absolute;left:0;top:${y/height*100}%;transform:translateY(-50%);font-size:10px;color:#71717a">${val.toFixed(0)}%</div>`;}
+  let xlab='';
+  for(let g=0;g<=5;g++){const val=xMin+(xMax-xMin)*g/5; xlab+=`<span style="position:absolute;left:${xx(val)/VW*100}%;transform:translateX(-50%)">${val.toFixed(1)}</span>`;}
+  const circles=points.map((p,i)=>{
+    const r=6+Math.sqrt(p.z/zMax)*26;
+    return `<circle cx="${xx(p.x)}" cy="${yy(p.y)}" r="${r}" fill="${PAL[i%PAL.length]}" fill-opacity="0.55" stroke="${PAL[i%PAL.length]}" stroke-width="1.2"
+      class="hoverable" data-tip="<b>${esc(p.name)}</b><br>${esc(p.category)}<br>⭐ ${p.x} · ↩ ${p.y}% · ${num(p.z)} pedidos"/>`;
+  }).join('');
+  el.innerHTML=`<div class="relative" style="height:${height}px">
+    <svg viewBox="0 0 ${VW} ${height}" style="width:100%;height:${height}px">${grid}${circles}</svg>
+    ${ylab}
+    <div style="position:absolute;left:0;right:0;bottom:18px;height:14px;font-size:10px;color:#71717a">${xlab}</div>
+    <div style="position:absolute;left:50%;bottom:0;transform:translateX(-50%);font-size:11px;color:#9ca3af">${xLabel}</div>
+    <div style="position:absolute;left:-2px;top:50%;transform:rotate(-90deg);transform-origin:left;font-size:11px;color:#9ca3af">${yLabel}</div>
+  </div>`;
+  el.querySelectorAll('[data-tip]').forEach(c=>bindTip(c,c.dataset.tip));
+}
+
+// ---------- KPI cards (design-system accent fills) ----------
+function kpiCard(label,value,sub,icon,accent){
+  const a={cyan:'bg-cyan-500 shadow-cyan-900/40',sky:'bg-sky-600 shadow-sky-900/40',yellow:'bg-yellow-400 shadow-yellow-900/40',
+    emerald:'bg-emerald-600 shadow-emerald-900/40',rose:'bg-rose-500 shadow-rose-900/40',violet:'bg-violet-600 shadow-violet-900/40'}[accent];
+  const ink = accent==='yellow' ? 'text-yellow-950' : 'text-white';
+  const sub2 = accent==='yellow' ? 'text-yellow-950/70' : 'text-white/75';
+  return `<div class="${a} ${ink} rounded-3xl p-4 shadow-lg border border-white/15 flex flex-col justify-between min-h-[112px]">
+    <div class="flex items-center justify-between"><span class="text-[11px] font-medium uppercase tracking-[0.12em] ${sub2}">${label}</span>
+      <svg class="iconify h-5 w-5 ${sub2}" data-icon="${icon}"></svg></div>
+    <div><div class="text-[22px] font-semibold tracking-tight leading-none mt-2">${value}</div>
+    <div class="text-[11px] mt-1 ${sub2}">${sub}</div></div></div>`;
+}
+
+// ================= RENDERERS =================
+let D=null; const done={};
+const M_PT=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+
+function rOverview(){
+  const m=D.monthly;
+  lineChart(document.getElementById('ov_revenue'),{series:[{name:'Receita',data:m.map(x=>x.revenue),color:'#22d3ee'}],categories:m.map(x=>x.label),height:280});
+  donut(document.getElementById('ov_device'),{data:D.sales.by_device.map((x,i)=>({name:x.name,value:x.orders,color:PAL[i]})),centerTop:num(D.kpis.total_orders),centerSub:'pedidos'});
+  hBars(document.getElementById('ov_category'),{data:D.sales.by_category.map(x=>({name:x.name,value:x.revenue})),height:330,distributed:true,valFmt:fmtK});
+  combo(document.getElementById('ov_orders_new'),{categories:m.map(x=>x.label),bar:{name:'Pedidos',data:m.map(x=>x.orders),color:'#38bdf8'},line:{name:'Novos clientes',data:m.map(x=>x.new_customers),color:'#facc15'},height:300});
+  vBars(document.getElementById('ov_payment'),{data:D.sales.by_payment.map(x=>({name:x.name,value:x.revenue})),height:300,distributed:true,valFmt:fmtUSD});
+}
+function rSales(){
+  const m=D.monthly;
+  lineChart(document.getElementById('s_rev_aov'),{series:[{name:'Receita',data:m.map(x=>x.revenue),color:'#22d3ee'},{name:'AOV',data:m.map(x=>x.aov),color:'#facc15',yFmt:v=>'$'+Math.round(v)}],categories:m.map(x=>x.label),height:300,area:true,dualAxis:true,valFmt:fmtUSD});
+  donut(document.getElementById('s_status'),{data:D.sales.by_status.map((x,i)=>({name:x.name,value:x.orders,color:['#34d399','#fb7185','#fbbf24','#60a5fa'][i]})),centerTop:num(D.kpis.total_orders),centerSub:'pedidos'});
+  heatmap(document.getElementById('s_season'),{rows:D.sales.seasonality.map(y=>({year:y.year,values:y.months})),months:M_PT});
+  lineChart(document.getElementById('s_return'),{series:[{name:'Devolução',data:D.sales.return_by_month.map(x=>x.return_rate),color:'#fb7185'}],categories:D.sales.return_by_month.map(x=>x.label),height:280,yFmt:v=>v.toFixed(0)+'%',valFmt:v=>v.toFixed(1)+'%'});
+  vBars(document.getElementById('s_year'),{data:D.sales.by_year.map(x=>({name:x.name,value:x.revenue})),height:280,distributed:true,valFmt:fmtK});
+  vBars(document.getElementById('s_dow'),{data:D.sales.by_dow.map(x=>({name:x.name.slice(0,3),value:x.orders})),height:280,color:'#34d399',valFmt:num});
+  hBars(document.getElementById('s_delivery'),{data:D.sales.delivery_by_category.map(x=>({name:x.name,value:x.avg_delivery_days})),height:300,color:'#a78bfa',valFmt:v=>v+' d'});
+}
+function rCustomers(){
+  const c=D.customers;
+  vBars(document.getElementById('c_age'),{data:c.age_hist.map(x=>({name:x.name,value:x.count})),height:260,color:'#22d3ee'});
+  donut(document.getElementById('c_gender'),{data:c.gender.map((x,i)=>({name:x.name,value:x.count,color:['#f472b6','#38bdf8','#a78bfa'][i]})),centerTop:num(c.total),centerSub:'clientes'});
+  groupedBars(document.getElementById('c_tier'),{data:c.by_tier,series:[{key:'customers',name:'Clientes',color:'#facc15'},{key:'avg_spend',name:'Gasto médio',color:'#34d399'}],fmts:[num,fmtUSD],height:260});
+  hBars(document.getElementById('c_country'),{data:c.top_countries.map(x=>({name:x.name,value:x.customers})),height:340,distributed:true,valFmt:num});
+  groupedBars(document.getElementById('c_channel'),{data:c.by_channel,series:[{key:'customers',name:'Clientes',color:'#38bdf8'},{key:'churn_rate',name:'Churn %',color:'#fb7185'}],fmts:[num,v=>v.toFixed(1)+'%'],height:340});
+  vBars(document.getElementById('c_recency'),{data:c.recency_hist.map(x=>({name:x.name,value:x.count})),height:260,color:'#fbbf24'});
+  vBars(document.getElementById('c_frequency'),{data:c.frequency_hist.map(x=>({name:x.name,value:x.count})),height:260,color:'#34d399'});
+  vBars(document.getElementById('c_ltv'),{data:c.ltv_hist.map(x=>({name:x.name,value:x.count})),height:260,color:'#a78bfa'});
+}
+function rProducts(){
+  const p=D.products;
+  hBars(document.getElementById('p_top'),{data:p.top_revenue.map(x=>({name:x.name,value:x.revenue})),height:420,distributed:true,valFmt:fmtK});
+  hBars(document.getElementById('p_price'),{data:p.avg_price_by_cat.map(x=>({name:x.name,value:x.avg_price})),height:420,color:'#34d399',valFmt:v=>'$'+v});
+  scatter(document.getElementById('p_scatter'),{points:p.scatter,height:380,xLabel:'Avaliação média',yLabel:'Devolução %',xMin:3.4,xMax:4.4});
+  vBars(document.getElementById('p_returns'),{data:p.worst_returns.map(x=>({name:x.name,value:x.return_rate})),height:320,distributed:true,rotate:true,valFmt:v=>v.toFixed(1)+'%'});
+}
+const R={overview:rOverview,sales:rSales,customers:rCustomers,products:rProducts};
+
+function showTab(name){
+  document.querySelectorAll('[data-panel]').forEach(p=>{const on=p.dataset.panel===name;p.classList.toggle('hidden',!on);p.classList.toggle('grid',on);});
+  document.querySelectorAll('.tab-btn').forEach(b=>b.setAttribute('data-active',String(b.dataset.tab===name)));
+  if(!done[name]){ R[name](); done[name]=true; }
+  if(window.Iconify) Iconify.scan();
+}
+
+// ---------- boot ----------
+fetch('data.json').then(r=>r.json()).then(data=>{
+  D=data; const k=D.kpis;
+  document.getElementById('subtitle').textContent=`${num(k.total_orders)} pedidos · ${num(D.customers.total)} clientes · jan/2020 – mar/2026`;
+  document.getElementById('kpis').innerHTML=[
+    kpiCard('Receita total',fmtK(k.total_revenue),'todo o período','solar:dollar-minimalistic-bold-duotone','cyan'),
+    kpiCard('Pedidos',num(k.total_orders),'itens-de-pedido','solar:cart-large-2-bold-duotone','sky'),
+    kpiCard('Ticket médio',fmtUSD(k.aov),'por pedido','solar:tag-price-bold-duotone','yellow'),
+    kpiCard('Clientes',num(D.customers.total),'base cadastrada','solar:users-group-rounded-bold-duotone','emerald'),
+    kpiCard('Taxa devolução',k.return_rate+'%','pedidos devolvidos','solar:undo-left-round-bold-duotone','rose'),
+    kpiCard('Churn',D.customers.churn_rate+'%','clientes inativos','solar:user-cross-bold-duotone','violet'),
+  ].join('');
+  document.querySelectorAll('.tab-btn').forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.tab)));
+  if(window.Iconify) Iconify.scan();
+  showTab('overview');
+}).catch(err=>{document.getElementById('subtitle').textContent='Erro ao carregar data.json — sirva via servidor HTTP.';console.error(err);});
+</script>
+</body></html>

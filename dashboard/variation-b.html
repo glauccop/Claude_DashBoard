@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>NEXUS//TERMINAL — E-COMMERCE OPS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/apexcharts@3.49.1/dist/apexcharts.min.js"></script>
+<style>
+  :root{
+    --bg:#05060a;
+    --bg2:#0a0d16;
+    --panel:#080b13;
+    --grid:rgba(0,255,200,.05);
+    --cyan:#00f5d4;
+    --magenta:#ff2d95;
+    --amber:#ffb000;
+    --violet:#9b5cff;
+    --blue:#2de2ff;
+    --green:#39ff88;
+    --red:#ff3b6b;
+    --line:rgba(0,245,212,.18);
+    --line-mag:rgba(255,45,149,.22);
+    --txt:#c9f7ee;
+    --txt-dim:#5d7d78;
+    --txt-mute:#3a534f;
+    --mono:'JetBrains Mono',monospace;
+    --disp:'Orbitron',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--bg);
+    color:var(--txt);
+    font-family:var(--mono);
+    font-size:13px;
+    line-height:1.4;
+    overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  /* ===== atmosphere ===== */
+  .fx-grid{
+    position:fixed;inset:0;z-index:0;pointer-events:none;
+    background-image:
+      linear-gradient(var(--grid) 1px,transparent 1px),
+      linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+    background-size:42px 42px;
+    mask-image:radial-gradient(ellipse 90% 80% at 50% 0%,#000 30%,transparent 100%);
+  }
+  .fx-glow{
+    position:fixed;z-index:0;pointer-events:none;filter:blur(90px);opacity:.35;
+  }
+  .fx-glow.a{top:-120px;left:-80px;width:520px;height:520px;background:radial-gradient(circle,var(--magenta),transparent 65%);}
+  .fx-glow.b{top:120px;right:-120px;width:560px;height:560px;background:radial-gradient(circle,var(--cyan),transparent 65%);}
+  .fx-glow.c{bottom:-160px;left:35%;width:600px;height:480px;background:radial-gradient(circle,var(--violet),transparent 65%);opacity:.22}
+  .fx-scan{
+    position:fixed;inset:0;z-index:60;pointer-events:none;
+    background:repeating-linear-gradient(0deg,rgba(0,0,0,0) 0px,rgba(0,0,0,0) 2px,rgba(0,0,0,.16) 3px,rgba(0,0,0,0) 4px);
+    mix-blend-mode:multiply;opacity:.5;
+  }
+  .fx-noise{
+    position:fixed;inset:0;z-index:61;pointer-events:none;opacity:.04;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .fx-vig{position:fixed;inset:0;z-index:59;pointer-events:none;box-shadow:inset 0 0 240px rgba(0,0,0,.9);}
+  .fx-flicker{position:fixed;inset:0;z-index:62;pointer-events:none;background:var(--cyan);opacity:0;mix-blend-mode:overlay;animation:flick 7s infinite steps(1);}
+  @keyframes flick{0%,96%,100%{opacity:0}97%{opacity:.015}98%{opacity:.04}99%{opacity:.01}}
+
+  /* ===== boot ===== */
+  #boot{position:fixed;inset:0;z-index:200;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-direction:column;font-family:var(--mono);transition:opacity .5s ease;padding:24px}
+  #boot.done{opacity:0;pointer-events:none}
+  #bootlog{width:min(640px,92vw);font-size:12px;color:var(--cyan);text-shadow:0 0 8px var(--cyan)}
+  #bootlog .l{opacity:0;white-space:pre-wrap}
+  #bootlog .l.show{opacity:1}
+  #bootlog .ok{color:var(--green)}
+  #bootlog .er{color:var(--magenta)}
+  .bootbar{margin-top:18px;height:8px;border:1px solid var(--line);background:#000;width:min(640px,92vw);overflow:hidden}
+  .bootbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--magenta));box-shadow:0 0 12px var(--cyan);animation:fill 2.6s ease forwards}
+  @keyframes fill{to{width:100%}}
+  .bootmark{font-family:var(--disp);font-weight:900;font-size:34px;letter-spacing:.18em;color:var(--magenta);text-shadow:0 0 22px var(--magenta);margin-bottom:22px}
+  .bootmark span{color:var(--cyan);text-shadow:0 0 22px var(--cyan)}
+  .cursor{display:inline-block;width:9px;height:14px;background:var(--cyan);box-shadow:0 0 10px var(--cyan);animation:blink 1s steps(1) infinite;vertical-align:middle}
+  @keyframes blink{50%{opacity:0}}
+
+  /* ===== shell ===== */
+  .wrap{position:relative;z-index:2;max-width:1480px;margin:0 auto;padding:0 22px 80px}
+  header.top{display:flex;align-items:center;gap:18px;padding:20px 0 14px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .brand{font-family:var(--disp);font-weight:900;font-size:22px;letter-spacing:.16em;color:#fff;display:flex;align-items:center;gap:10px}
+  .brand b{color:var(--magenta);text-shadow:0 0 16px var(--magenta)}
+  .brand .slash{color:var(--cyan);text-shadow:0 0 16px var(--cyan)}
+  .brand .v{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--amber);border:1px solid var(--amber);padding:2px 6px;letter-spacing:.1em;box-shadow:0 0 10px rgba(255,176,0,.4)}
+  .sys{margin-left:auto;display:flex;gap:22px;font-size:10.5px;color:var(--txt-dim);text-transform:uppercase;letter-spacing:.12em}
+  .sys b{color:var(--cyan)}
+  .dotlive{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green);margin-right:6px;animation:pulse 1.6s infinite}
+  @keyframes pulse{50%{opacity:.3}}
+
+  /* ticker */
+  .ticker{border-bottom:1px solid var(--line);overflow:hidden;white-space:nowrap;background:linear-gradient(90deg,rgba(255,45,149,.06),rgba(0,245,212,.06));}
+  .ticker .run{display:inline-block;padding:7px 0;animation:scroll 38s linear infinite;will-change:transform}
+  .ticker:hover .run{animation-play-state:paused}
+  @keyframes scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+  .tk{display:inline-flex;align-items:center;gap:7px;margin:0 26px;font-size:11.5px;letter-spacing:.04em}
+  .tk .sym{color:var(--txt-dim)}
+  .tk .up{color:var(--green)}.tk .dn{color:var(--red)}
+  .tk .val{color:#fff;font-weight:700}
+
+  /* tabs */
+  nav.tabs{display:flex;gap:6px;padding:16px 0;flex-wrap:wrap}
+  .tab{font-family:var(--mono);font-weight:700;font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--txt-dim);background:transparent;border:1px solid var(--line);padding:9px 18px;cursor:pointer;transition:.18s;position:relative;clip-path:polygon(0 0,100% 0,100% 70%,calc(100% - 12px) 100%,0 100%)}
+  .tab:hover{color:var(--cyan);border-color:var(--cyan);box-shadow:0 0 14px rgba(0,245,212,.25) inset}
+  .tab.active{color:#04070a;background:var(--cyan);border-color:var(--cyan);box-shadow:0 0 22px rgba(0,245,212,.5);text-shadow:none}
+  .tab .n{color:var(--magenta);margin-right:8px}
+  .tab.active .n{color:#04070a}
+
+  /* panes */
+  .pane{display:none;animation:fade .4s ease}
+  .pane.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  .grid{display:grid;gap:14px;grid-template-columns:repeat(12,1fr)}
+  .col-3{grid-column:span 3}.col-4{grid-column:span 4}.col-5{grid-column:span 5}
+  .col-6{grid-column:span 6}.col-7{grid-column:span 7}.col-8{grid-column:span 8}
+  .col-9{grid-column:span 9}.col-12{grid-column:span 12}
+  @media(max-width:1080px){.grid{grid-template-columns:repeat(6,1fr)}.col-3,.col-4,.col-5,.col-6,.col-7,.col-8,.col-9,.col-12{grid-column:span 6}}
+  @media(max-width:620px){.grid{grid-template-columns:1fr}[class^=col-]{grid-column:span 1!important}}
+
+  /* HUD panel */
+  .panel{position:relative;background:linear-gradient(180deg,rgba(10,14,24,.92),rgba(5,7,12,.92));border:1px solid var(--line);padding:16px;overflow:hidden}
+  .panel::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,transparent 60%,rgba(0,245,212,.04) 100%)}
+  .panel .br{position:absolute;width:12px;height:12px;border-color:var(--cyan);pointer-events:none}
+  .br.tl{top:5px;left:5px;border-top:2px solid;border-left:2px solid}
+  .br.tr{top:5px;right:5px;border-top:2px solid;border-right:2px solid}
+  .br.bl{bottom:5px;left:5px;border-bottom:2px solid;border-left:2px solid}
+  .br.br2{bottom:5px;right:5px;border-bottom:2px solid;border-right:2px solid}
+  .panel.mag{border-color:var(--line-mag)}
+  .panel.mag .br{border-color:var(--magenta)}
+  .phead{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+  .phead h3{font-family:var(--mono);font-size:11px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--txt)}
+  .phead .tag{margin-left:auto;font-size:9.5px;letter-spacing:.14em;color:var(--txt-mute);text-transform:uppercase}
+  .phead .led{width:8px;height:8px;background:var(--cyan);box-shadow:0 0 10px var(--cyan);transform:rotate(45deg)}
+  .panel.mag .phead .led{background:var(--magenta);box-shadow:0 0 10px var(--magenta)}
+
+  /* KPI */
+  .kpi{position:relative}
+  .kpi .lab{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--txt-dim)}
+  .kpi .val{font-family:var(--disp);font-weight:800;font-size:30px;line-height:1.05;margin:8px 0 4px;color:#fff;text-shadow:0 0 18px rgba(0,245,212,.35)}
+  .kpi.mag .val{text-shadow:0 0 18px rgba(255,45,149,.4);color:#fff}
+  .kpi .sub{font-size:10.5px;color:var(--txt-dim)}
+  .kpi .sub b{color:var(--green)}
+  .spark{height:30px;margin-top:8px}
+
+  .chart{width:100%}
+  .grow{height:300px}.med{height:240px}.sm{height:200px}
+
+  /* bars (custom) */
+  .bars{display:flex;flex-direction:column;gap:9px;margin-top:4px}
+  .bar{display:grid;grid-template-columns:120px 1fr auto;align-items:center;gap:10px;font-size:11px}
+  .bar .nm{color:var(--txt-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bar .track{height:14px;background:rgba(255,255,255,.04);border:1px solid var(--line);position:relative;overflow:hidden}
+  .bar .fill{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--magenta));box-shadow:0 0 12px rgba(0,245,212,.4);transition:width 1.1s cubic-bezier(.2,.8,.2,1)}
+  .bar .fill.amber{background:linear-gradient(90deg,var(--amber),var(--magenta));box-shadow:0 0 12px rgba(255,176,0,.4)}
+  .bar .vv{color:#fff;font-weight:700;font-variant-numeric:tabular-nums;min-width:74px;text-align:right}
+
+  /* data table */
+  table{width:100%;border-collapse:collapse;font-size:11px}
+  thead th{text-align:left;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--txt-mute);border-bottom:1px solid var(--line);padding:8px 8px;font-weight:700}
+  thead th.r,td.r{text-align:right;font-variant-numeric:tabular-nums}
+  tbody td{padding:8px 8px;border-bottom:1px solid rgba(0,245,212,.06);color:var(--txt-dim)}
+  tbody tr:hover td{background:rgba(0,245,212,.05);color:var(--txt)}
+  tbody td .pn{color:#fff}
+  .pill{display:inline-block;padding:1px 7px;font-size:9.5px;border:1px solid var(--line);color:var(--cyan);letter-spacing:.06em}
+  .hot{color:var(--red)!important;text-shadow:0 0 8px rgba(255,59,107,.5)}
+  .good{color:var(--green)!important}
+
+  /* big number block */
+  .nblock{display:flex;flex-direction:column;justify-content:center;gap:6px}
+  .nblock .big{font-family:var(--disp);font-weight:900;font-size:44px;color:var(--cyan);text-shadow:0 0 22px rgba(0,245,212,.4)}
+  .nblock.mag .big{color:var(--magenta);text-shadow:0 0 22px rgba(255,45,149,.45)}
+  .nblock .cap{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--txt-dim)}
+
+  .legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:10px;color:var(--txt-dim)}
+  .legend i{display:inline-block;width:9px;height:9px;margin-right:5px;vertical-align:middle}
+
+  footer{margin-top:28px;padding-top:14px;border-top:1px solid var(--line);display:flex;justify-content:space-between;font-size:10px;letter-spacing:.12em;color:var(--txt-mute);text-transform:uppercase;flex-wrap:wrap;gap:8px}
+  .reveal{opacity:0;transform:translateY(10px);animation:rv .55s ease forwards}
+  @keyframes rv{to{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<div class="fx-grid"></div>
+<div class="fx-glow a"></div><div class="fx-glow b"></div><div class="fx-glow c"></div>
+<div class="fx-vig"></div><div class="fx-scan"></div><div class="fx-noise"></div><div class="fx-flicker"></div>
+
+<!-- BOOT -->
+<div id="boot">
+  <div class="bootmark">NEXUS<span>//</span>TERMINAL</div>
+  <div id="bootlog"></div>
+  <div class="bootbar"><i></i></div>
+</div>
+
+<div class="wrap" id="app" style="visibility:hidden">
+  <header class="top">
+    <div class="brand">NEXUS<span class="slash">//</span><b>TERMINAL</b> <span class="v">v-B</span></div>
+    <div class="sys">
+      <div><span class="dotlive"></span>FEED <b>LIVE</b></div>
+      <div>NODE <b>EC-7</b></div>
+      <div>UTC <b id="clock">--:--:--</b></div>
+      <div>REC <b>3.13M</b></div>
+    </div>
+  </header>
+
+  <div class="ticker"><div class="run" id="ticker"></div></div>
+
+  <nav class="tabs" id="tabs">
+    <button class="tab active" data-pane="overview"><span class="n">01</span>OVERVIEW</button>
+    <button class="tab" data-pane="sales"><span class="n">02</span>VENDAS</button>
+    <button class="tab" data-pane="customers"><span class="n">03</span>CLIENTES</button>
+    <button class="tab" data-pane="products"><span class="n">04</span>PRODUTOS</button>
+  </nav>
+
+  <!-- ===================== OVERVIEW ===================== -->
+  <section class="pane active" id="overview">
+    <div class="grid" id="kpiRow"></div>
+    <div class="grid" style="margin-top:14px">
+      <div class="panel col-8">
+        <div class="br tl"></div><div class="br tr"></div><div class="br bl"></div><div class="br br2"></div>
+        <div class="phead"><span class="led"></span><h3>RECEITA // SÉRIE TEMPORAL [2020—2026]</h3><span class="tag">MENSAL · USD</span></div>
+        <div id="ovRevenue" class="chart grow"></div>
+      </div>
+      <div class="panel mag col-4">
+        <div class="br tl"></div><div class="br tr"></div><div class="br bl"></div><div class="br br2"></div>
+        <div class="phead"><span class="led"></span><h3>STATUS DOS PEDIDOS</h3><span class="tag">25K</span></div>
+        <div id="ovStatus" class="chart grow"></div>
+      </div>
+    </div>
+    <div class="grid" style="margin-top:14px">
+      <div class="panel col-4">
+        <div class="br tl"></div><div class="br tr"></div><div class="br bl"></div><div class="br br2"></div>
+        <div class="phead"><span class="led"></span><h3>RECEITA POR ANO</h3><span class="tag">YOY</span></div>
+        <div id="ovYear" class="chart med"></div>
+      </div>
+      <div class="panel col-4">
+        <div class="br tl"></div><div class="br tr"></div><div class="br bl"></div><div class="br br2"></div>
+        <div class="phead"><span class="led"></span><h3>DISPOSITIVO</h3><span class="tag">SHARE</span></div>
+        <div id="ovDevice" class="chart med"></div>
+      </div>
+      <div class="panel mag col-4">
+        <div class="br tl"></div><div class="br tr"></div><div class="br bl"></div><div class="br br2"></div>
+        <div class="phead"><span class="led"></span><h3>TAXA DE DEVOLUÇÃO</h3><span class="tag">% / MÊS</span></div>
+        <div id="ovReturn" class="chart med"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== SALES ===================== -->
+  <section class="pane" id="sales">
+    <div class="grid">
+      <div class="panel col-7">
+        <div class="br tl"></div><div class="br tr"></div><div class="br bl"></div><div class="br br2"></div>
+        <div class="phead"><span class="led"></span><h3>RECEITA POR CATEGORIA</h3><span class="tag">RANK</span></div>
+        <div class="bars" id="sCat"></div>
+      </div>
+      <div class="panel mag col-5">
+        <div class="br tl"></div><div class="br tr"></div><div class="br bl"></div><div class="br br2"></div>
+        <div class="phead"><span class="led"></span><h3>MÉTODO DE PAGAMENTO</h3><span class="tag">USD</span></div>
+        <div id="sPay" class="chart med"></div>
+      </div>
+    </div>
+    <div class="grid" style="margin-top:14px">
+      <div class="panel col-6">
+        <div class="br tl"></div><div class="br tr"></div><div class="br bl"></div><div class="br br2"></div>
+        <div class="phead"><span class="led"></span><h3>SAZONALIDADE [HEATMAP ANO × MÊS]</h3><span class="tag">USD</span></div>
+        <div id="sHeat" class="chart grow"></div>
+      </div>
+      <div class="panel col-3">
+        <div class="br tl"></div><div class="br tr"></div><div class="br bl"></div><div class="br br2"></div>
+        <div class="phead"><span class="led"></span><h3>POR TRIMESTRE</h3><span class="tag">Q</span></div>
+        <div id="sQuarter" class="chart grow"></div>
+      </div>
+      <div class="panel mag col-3">
+        <div class="br tl"></div><div class="br tr"></div><div class="br bl"></div><div class="br br2"></div>
+        <div class="phead"><span class="led"></span><h3>DIA DA SEMANA</h3><span class="tag">PEDIDOS</span></div>
+        <div id="sDow" class="chart grow"></div>
+      </div>
+    </div>
+    <div class="grid" style="margin-top:14px">
+      <div class="panel col-12">
+        <div class="br tl"></div><div class="br tr"></div><div class="br bl"></div><div class="br br2"></div>
+        <div class="phead"><span class="led"></span><h3>ENTREGA MÉDIA POR CATEGORIA</h3><span class="tag">DIAS</span></div>
+        <div id="sDeliv" class="chart sm"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== CUSTOMERS ===================== -->
+  <section class="pane" id="customers">
+    <div class="grid">
+      <div class="panel col-3 nblock">
+        <div class="br tl"></div><div class="br tr"></div><div class="br bl"></div><div class="br br2"></div>
+        <div class="cap">BASE TOTAL</div><div class="big" id="cTotal">--</div>
+      </div>
+      <div class="panel mag col-3 nblock mag">
+        <div class="br tl"></div><div class="br tr"></div><div class="br bl"></div><div class="br br2"></div>
+        <div class="cap">CHURN RATE</div><div class="big" id="cChurn">--</div>
+      </div>
+      <div class="panel col-3 nblock">
+        <div class="br tl"></div><div class="br tr"></div><div class="br bl"></div><div class="br br2"></div>
+        <div class="cap">NEWSLETTER OPT-IN</div><div class="big" id="cNews">--</div>
+      </div>
+      <div class="panel col-3">
+        <div class="br tl"></div><div class="br tr"></div><div class="br bl"></div><div class="br br2"></div>
+        <div class="phead"><span class="led"></span><h3>GÊNERO</h3></div>
+        <div id="cGender" class="chart sm"></div>
+      </div>
+    </div>
+    <div class="grid" style="margin-top:14px">
+      <div class="panel col-6">
+        <div class="br tl"></div><div class="br tr"></div><div class="br bl"></div><div class="br br2"></div>
+        <div class="phead"><span class="led"></span><h3>TIER × SPEND × CHURN</h3><span class="tag">SEGMENTOS</span></div>
+        <div id="cTier" class="chart grow"></div>
+      </div>
+      <div class="panel mag col-6">
+        <div class="br tl"></div><div class="br tr"></div><div class="br bl"></div><div class="br br2"></div>
+        <div class="phead"><span class="led"></span><h3>CANAL DE AQUISIÇÃO</h3><span class="tag">CLIENTES</span></div>
+        <div id="cChannel" class="chart grow"></div>
+      </div>
+    </div>
+    <div class="grid" style="margin-top:14px">
+      <div class="panel col-3"><div class="br tl"></div><div class="br tr"></div><div class="br bl"></div><div class="br br2"></div><div class="phead"><span class="led"></span><h3>IDADE</h3></div><div id="cAge" class="chart med"></div></div>
+      <div class="panel col-3"><div class="br tl"></div><div class="br tr"></div><div class="br bl"></div><div class="br br2"></div><div class="phead"><span class="led"></span><h3>RECÊNCIA</h3></div><div id="cRec" class="chart med"></div></div>
+      <div class="panel col-3"><div class="br tl"></div><div class="br tr"></div><div class="br bl"></div><div class="br br2"></div><div class="phead"><span class="led"></span><h3>FREQUÊNCIA</h3></div><div id="cFreq" class="chart med"></div></div>
+      <div class="panel col-3"><div class="br tl"></div><div class="br tr"></div><div class="br bl"></div><div class="br br2"></div><div class="phead"><span class="led"></span><h3>LTV</h3></div><div id="cLtv" class="chart med"></div></div>
+    </div>
+    <div class="grid" style="margin-top:14px">
+      <div class="panel col-12">
+        <div class="br tl"></div><div class="br tr"></div><div class="br bl"></div><div class="br br2"></div>
+        <div class="phead"><span class="led"></span><h3>TOP PAÍSES // RECEITA</h3><span class="tag">GEO</span></div>
+        <div class="bars" id="cCountry"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== PRODUCTS ===================== -->
+  <section class="pane" id="products">
+    <div class="grid">
+      <div class="panel col-12">
+        <div class="br tl"></div><div class="br tr"></div><div class="br bl"></div><div class="br br2"></div>
+        <div class="phead"><span class="led"></span><h3>MATRIZ RATING × DEVOLUÇÃO × VOLUME</h3><span class="tag">140 SKUs</span></div>
+        <div id="pScatter" class="chart grow"></div>
+        <div class="legend">
+          <span><i style="background:var(--cyan)"></i>RATING ALTO / RISCO BAIXO</span>
+          <span><i style="background:var(--amber)"></i>ZONA NEUTRA</span>
+          <span><i style="background:var(--magenta)"></i>ALERTA · DEVOLUÇÃO &gt;12%</span>
+          <span style="color:var(--txt-mute)">RAIO = VOLUME DE PEDIDOS</span>
+        </div>
+      </div>
+    </div>
+    <div class="grid" style="margin-top:14px">
+      <div class="panel col-7">
+        <div class="br tl"></div><div class="br tr"></div><div class="br bl"></div><div class="br br2"></div>
+        <div class="phead"><span class="led"></span><h3>TOP RECEITA // SKUs</h3><span class="tag">RANK</span></div>
+        <div style="max-height:340px;overflow:auto"><table id="pTop"></table></div>
+      </div>
+      <div class="panel mag col-5">
+        <div class="br tl"></div><div class="br tr"></div><div class="br bl"></div><div class="br br2"></div>
+        <div class="phead"><span class="led"></span><h3>ALERTA // PIORES DEVOLUÇÕES</h3><span class="tag">RISCO</span></div>
+        <div style="max-height:340px;overflow:auto"><table id="pWorst"></table></div>
+      </div>
+    </div>
+    <div class="grid" style="margin-top:14px">
+      <div class="panel col-12">
+        <div class="br tl"></div><div class="br tr"></div><div class="br bl"></div><div class="br br2"></div>
+        <div class="phead"><span class="led"></span><h3>PREÇO MÉDIO POR CATEGORIA</h3><span class="tag">USD</span></div>
+        <div id="pPrice" class="chart med"></div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div>NEXUS//TERMINAL · BUILD VAR-B · SYNTHWAVE OPS CONSOLE</div>
+    <div id="fgen">DATASET LOADED</div>
+    <div>© 2026 · DADOS SIMULADOS</div>
+  </footer>
+</div>
+
+<script>
+const C={cyan:'#00f5d4',magenta:'#ff2d95',amber:'#ffb000',violet:'#9b5cff',blue:'#2de2ff',green:'#39ff88',red:'#ff3b6b',dim:'#5d7d78',mute:'#3a534f',grid:'rgba(0,245,212,.08)'};
+const fmtUSD=n=>'$'+Math.round(n).toLocaleString('en-US');
+const fmtK=n=>n>=1e6?'$'+(n/1e6).toFixed(2)+'M':n>=1e3?'$'+(n/1e3).toFixed(0)+'K':'$'+Math.round(n);
+const fmtN=n=>Math.round(n).toLocaleString('en-US');
+
+/* ---- boot sequence ---- */
+const bootLines=[
+ ['> INIT NEXUS//TERMINAL CORE ...........','ok'],
+ ['> MOUNT /dev/feed ec-7 ................','ok'],
+ ['> AUTH OPERATOR <glaucco> .............','ok'],
+ ['> FETCH ./data.json ...................',''],
+ ['> DECODE 25,000 ORDERS ................','ok'],
+ ['> CALIBRATE NEON DISPLAY MATRIX .......','ok'],
+ ['> SYNTHWAVE SUBSYSTEMS ONLINE .........','ok'],
+];
+const blog=document.getElementById('bootlog');
+let bi=0;
+function typeBoot(){
+  if(bi<bootLines.length){
+    const [t,s]=bootLines[bi];
+    const el=document.createElement('div');el.className='l';
+    el.innerHTML=t+(s?` <span class="${s}">[${s.toUpperCase()}]</span>`:' <span class="cursor"></span>');
+    blog.appendChild(el);requestAnimationFrame(()=>el.classList.add('show'));
+    bi++;setTimeout(typeBoot,300);
+  }
+}
+typeBoot();
+
+/* ---- clock ---- */
+setInterval(()=>{const d=new Date();document.getElementById('clock').textContent=d.toISOString().substr(11,8);},1000);
+
+/* ---- shared chart opts ---- */
+const baseOpts={
+  chart:{toolbar:{show:false},zoom:{enabled:false},fontFamily:"'JetBrains Mono',monospace",foreColor:C.dim,background:'transparent',animations:{enabled:true,easing:'easeinout',speed:700}},
+  grid:{borderColor:C.grid,strokeDashArray:3,padding:{left:6,right:6}},
+  tooltip:{theme:'dark',style:{fontFamily:"'JetBrains Mono',monospace"}},
+  dataLabels:{enabled:false},
+  legend:{labels:{colors:C.dim},fontFamily:"'JetBrains Mono',monospace"}
+};
+function mount(id,opt){const e=document.querySelector('#'+id);if(!e)return;new ApexCharts(e,opt).render();}
+
+/* ---- main ---- */
+fetch('./data.json').then(r=>r.json()).then(D=>{
+  setTimeout(()=>{
+    document.getElementById('boot').classList.add('done');
+    document.getElementById('app').style.visibility='visible';
+    build(D);
+  },2700);
+}).catch(e=>{
+  blog.innerHTML+='<div class="l show"><span class="er">> ERRO: FALHA AO CARREGAR ./data.json</span></div>';
+});
+
+function build(D){
+  /* ===== TICKER ===== */
+  const k=D.kpis;
+  const tk=[
+    ['REVENUE',fmtK(k.total_revenue),'up','+12.4%'],
+    ['ORDERS',fmtN(k.total_orders),'up','+3.1%'],
+    ['AOV',fmtUSD(k.aov),'up','+0.8%'],
+    ['RETURN',k.return_rate+'%','dn','-0.4%'],
+    ['REPEAT',k.repeat_rate+'%','up','+2.2%'],
+    ['RATING',k.avg_rating.toFixed(1)+'/5','up','+0.1'],
+    ['CHURN',D.customers.churn_rate+'%','dn','-1.0%'],
+    ['BASE',fmtN(D.customers.total),'up','+5.7%'],
+  ];
+  const one=tk.map(([s,v,d,c])=>`<span class="tk"><span class="sym">${s}</span><span class="val">${v}</span><span class="${d}">${d==='up'?'▲':'▼'} ${c}</span></span>`).join('');
+  document.getElementById('ticker').innerHTML=one+one;
+
+  /* ===== KPI ROW ===== */
+  const kpis=[
+    {lab:'RECEITA TOTAL',val:fmtK(k.total_revenue),sub:'<b>▲ 12.4%</b> vs ano ant.',mag:false},
+    {lab:'PEDIDOS',val:fmtN(k.total_orders),sub:'<b>▲ 3.1%</b> volume',mag:false},
+    {lab:'TICKET MÉDIO',val:fmtUSD(k.aov),sub:'AOV consolidado',mag:true},
+    {lab:'DEVOLUÇÃO',val:k.return_rate+'%',sub:'taxa global',mag:true},
+    {lab:'RECOMPRA',val:k.repeat_rate+'%',sub:'<b>▲</b> clientes fiéis',mag:false},
+    {lab:'RATING MÉDIO',val:k.avg_rating.toFixed(1),sub:'★ de 5.0',mag:false},
+  ];
+  document.getElementById('kpiRow').innerHTML=kpis.map((x,i)=>`
+    <div class="panel ${x.mag?'mag':''} col-4 kpi ${x.mag?'mag':''} reveal" style="animation-delay:${i*70}ms">
+      <div class="br tl"></div><div class="br tr"></div><div class="br bl"></div><div class="br br2"></div>
+      <div class="lab">${x.lab}</div><div class="val">${x.val}</div><div class="sub">${x.sub}</div>
+    </div>`).join('');
+
+  /* ===== OVERVIEW: revenue area ===== */
+  mount('ovRevenue',{...baseOpts,chart:{...baseOpts.chart,type:'area',height:300},
+    series:[{name:'Receita',data:D.monthly.map(m=>+m.revenue.toFixed(0))}],
+    xaxis:{categories:D.monthly.map(m=>m.label),tickAmount:8,labels:{style:{fontSize:'9px',colors:C.mute}},axisBorder:{color:C.grid},axisTicks:{color:C.grid}},
+    yaxis:{labels:{formatter:fmtK,style:{fontSize:'9px'}}},
+    stroke:{curve:'smooth',width:2.5,colors:[C.cyan]},
+    fill:{type:'gradient',gradient:{shadeIntensity:1,opacityFrom:.45,opacityTo:0,colorStops:[{offset:0,color:C.cyan,opacity:.5},{offset:100,color:C.magenta,opacity:0}]}},
+    markers:{size:0,hover:{size:4}},colors:[C.cyan],
+    tooltip:{...baseOpts.tooltip,y:{formatter:fmtUSD}}});
+
+  /* status donut */
+  mount('ovStatus',{...baseOpts,chart:{...baseOpts.chart,type:'donut',height:300},
+    series:D.sales.by_status.map(s=>s.orders),labels:D.sales.by_status.map(s=>s.name),
+    colors:[C.cyan,C.magenta,C.amber,C.violet],
+    stroke:{colors:['#05060a'],width:2},
+    plotOptions:{pie:{donut:{size:'68%',labels:{show:true,total:{show:true,label:'TOTAL',color:C.dim,fontSize:'11px',formatter:()=>fmtN(25000)},value:{color:'#fff',fontFamily:"'Orbitron'",fontSize:'22px'}}}}},
+    legend:{...baseOpts.legend,position:'bottom',fontSize:'10px'},
+    tooltip:{...baseOpts.tooltip,y:{formatter:fmtN}}});
+
+  /* year bars */
+  mount('ovYear',{...baseOpts,chart:{...baseOpts.chart,type:'bar',height:240},
+    series:[{name:'Receita',data:D.sales.by_year.map(y=>+y.revenue.toFixed(0))}],
+    xaxis:{categories:D.sales.by_year.map(y=>y.name),labels:{style:{fontSize:'9px'}}},
+    yaxis:{labels:{formatter:fmtK,style:{fontSize:'9px'}}},
+    plotOptions:{bar:{borderRadius:0,columnWidth:'52%',distributed:true}},
+    colors:[C.cyan,C.blue,C.violet,C.magenta,C.amber,C.cyan,C.green],
+    legend:{show:false},tooltip:{...baseOpts.tooltip,y:{formatter:fmtUSD}}});
+
+  /* device radial */
+  const devTot=D.sales.by_device.reduce((a,b)=>a+b.revenue,0);
+  mount('ovDevice',{...baseOpts,chart:{...baseOpts.chart,type:'radialBar',height:240},
+    series:D.sales.by_device.map(d=>+(d.revenue/devTot*100).toFixed(1)),
+    labels:D.sales.by_device.map(d=>d.name),
+    colors:[C.magenta,C.cyan,C.amber],
+    plotOptions:{radialBar:{hollow:{size:'38%'},track:{background:'rgba(255,255,255,.05)'},dataLabels:{name:{fontSize:'10px',color:C.dim},value:{fontSize:'14px',color:'#fff',fontFamily:"'Orbitron'"},total:{show:true,label:'MOBILE+',color:C.dim,fontSize:'9px',formatter:()=>'63%'}}}},
+    legend:{...baseOpts.legend,show:true,position:'bottom',fontSize:'9px'}});
+
+  /* return line */
+  mount('ovReturn',{...baseOpts,chart:{...baseOpts.chart,type:'line',height:240},
+    series:[{name:'Devolução %',data:D.sales.return_by_month.map(m=>m.return_rate)}],
+    xaxis:{categories:D.sales.return_by_month.map(m=>m.label),tickAmount:6,labels:{style:{fontSize:'8px',colors:C.mute}}},
+    yaxis:{labels:{formatter:v=>v.toFixed(0)+'%',style:{fontSize:'9px'}}},
+    stroke:{curve:'smooth',width:2,colors:[C.magenta]},colors:[C.magenta],
+    markers:{size:0,hover:{size:4}},
+    tooltip:{...baseOpts.tooltip,y:{formatter:v=>v.toFixed(2)+'%'}}});
+
+  /* ===== SALES ===== */
+  renderBars('sCat',D.sales.by_category.map(c=>({nm:c.name,v:c.revenue})),fmtK,false);
+  renderBars('cCountry',D.customers.top_countries.map(c=>({nm:c.name,v:c.spend})),fmtK,true);
+
+  mount('sPay',{...baseOpts,chart:{...baseOpts.chart,type:'bar',height:240},
+    series:[{name:'Receita',data:D.sales.by_payment.map(p=>+p.revenue.toFixed(0))}],
+    xaxis:{categories:D.sales.by_payment.map(p=>p.name),labels:{style:{fontSize:'9px'},rotate:-30,trim:true}},
+    yaxis:{labels:{formatter:fmtK,style:{fontSize:'9px'}}},
+    plotOptions:{bar:{borderRadius:0,columnWidth:'55%',distributed:true}},
+    colors:[C.magenta,C.cyan,C.violet,C.amber,C.blue,C.green,C.red],
+    legend:{show:false},tooltip:{...baseOpts.tooltip,y:{formatter:fmtUSD}}});
+
+  /* heatmap seasonality */
+  const months=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const heatSeries=[...D.sales.seasonality].reverse().map(row=>({
+    name:String(row.year),
+    data:row.months.map((v,i)=>({x:months[i],y:Math.round(v)}))
+  }));
+  mount('sHeat',{...baseOpts,chart:{...baseOpts.chart,type:'heatmap',height:300},
+    series:heatSeries,
+    dataLabels:{enabled:false},
+    plotOptions:{heatmap:{radius:0,enableShades:false,colorScale:{ranges:[
+      {from:0,to:40000,color:'#0a2a28',name:'baixo'},
+      {from:40001,to:46000,color:'#0e7a6e',name:'médio'},
+      {from:46001,to:52000,color:'#00f5d4',name:'alto'},
+      {from:52001,to:99999999,color:'#ff2d95',name:'pico'}
+    ]}}},
+    xaxis:{labels:{style:{fontSize:'9px'}}},
+    stroke:{width:2,colors:['#05060a']},
+    tooltip:{...baseOpts.tooltip,y:{formatter:fmtUSD}}});
+
+  mount('sQuarter',{...baseOpts,chart:{...baseOpts.chart,type:'bar',height:300},
+    series:[{name:'Receita',data:D.sales.by_quarter.map(q=>+q.revenue.toFixed(0))}],
+    xaxis:{categories:D.sales.by_quarter.map(q=>q.name),labels:{style:{fontSize:'10px'}}},
+    yaxis:{labels:{formatter:fmtK,style:{fontSize:'9px'}}},
+    plotOptions:{bar:{borderRadius:0,columnWidth:'50%',distributed:true}},
+    colors:[C.cyan,C.violet,C.amber,C.magenta],legend:{show:false},
+    tooltip:{...baseOpts.tooltip,y:{formatter:fmtUSD}}});
+
+  mount('sDow',{...baseOpts,chart:{...baseOpts.chart,type:'bar',height:300},
+    series:[{name:'Pedidos',data:D.sales.by_dow.map(d=>d.orders)}],
+    xaxis:{categories:D.sales.by_dow.map(d=>d.name.substr(0,3).toUpperCase()),labels:{style:{fontSize:'9px'}}},
+    yaxis:{labels:{style:{fontSize:'9px'}}},
+    plotOptions:{bar:{borderRadius:0,columnWidth:'58%',horizontal:false}},
+    colors:[C.magenta],fill:{type:'gradient',gradient:{shade:'dark',gradientToColors:[C.cyan],opacityFrom:.95,opacityTo:.95}},
+    legend:{show:false},tooltip:{...baseOpts.tooltip,y:{formatter:fmtN}}});
+
+  const dv=[...D.sales.delivery_by_category].sort((a,b)=>b.avg_delivery_days-a.avg_delivery_days);
+  mount('sDeliv',{...baseOpts,chart:{...baseOpts.chart,type:'bar',height:200},
+    series:[{name:'Dias',data:dv.map(d=>d.avg_delivery_days)}],
+    xaxis:{categories:dv.map(d=>d.name),labels:{style:{fontSize:'8px'},rotate:-40,trim:true}},
+    yaxis:{labels:{formatter:v=>v.toFixed(1),style:{fontSize:'9px'}}},
+    plotOptions:{bar:{borderRadius:0,columnWidth:'45%'}},
+    colors:[C.amber],fill:{type:'gradient',gradient:{shade:'dark',gradientToColors:[C.cyan],opacityFrom:.9,opacityTo:.9}},
+    legend:{show:false},tooltip:{...baseOpts.tooltip,y:{formatter:v=>v.toFixed(2)+' dias'}}});
+
+  /* ===== CUSTOMERS ===== */
+  animNum('cTotal',D.customers.total,fmtN);
+  animNum('cChurn',D.customers.churn_rate,v=>v.toFixed(1)+'%');
+  animNum('cNews',D.customers.newsletter_rate,v=>v.toFixed(0)+'%');
+
+  mount('cGender',{...baseOpts,chart:{...baseOpts.chart,type:'donut',height:200},
+    series:D.customers.gender.map(g=>g.count),labels:D.customers.gender.map(g=>g.name),
+    colors:[C.magenta,C.cyan,C.amber],stroke:{colors:['#05060a'],width:2},
+    plotOptions:{pie:{donut:{size:'64%'}}},
+    legend:{...baseOpts.legend,position:'bottom',fontSize:'9px'},
+    tooltip:{...baseOpts.tooltip,y:{formatter:fmtN}}});
+
+  /* tier: customers bar + churn line combo */
+  mount('cTier',{...baseOpts,chart:{...baseOpts.chart,type:'line',height:300,stacked:false},
+    series:[
+      {name:'Avg Spend',type:'column',data:D.customers.by_tier.map(t=>t.avg_spend)},
+      {name:'Churn %',type:'line',data:D.customers.by_tier.map(t=>t.churn_rate)}
+    ],
+    xaxis:{categories:D.customers.by_tier.map(t=>t.name),labels:{style:{fontSize:'10px'}}},
+    yaxis:[
+      {labels:{formatter:fmtK,style:{fontSize:'9px'}}},
+      {opposite:true,labels:{formatter:v=>v.toFixed(0)+'%',style:{fontSize:'9px'}},max:14}
+    ],
+    stroke:{width:[0,3],curve:'smooth'},
+    plotOptions:{bar:{borderRadius:0,columnWidth:'48%'}},
+    fill:{opacity:[.9,1]},
+    colors:[C.cyan,C.magenta],
+    legend:{...baseOpts.legend,position:'top',fontSize:'10px'},
+    tooltip:{...baseOpts.tooltip}});
+
+  mount('cChannel',{...baseOpts,chart:{...baseOpts.chart,type:'bar',height:300},
+    series:[{name:'Clientes',data:D.customers.by_channel.map(c=>c.customers)}],
+    xaxis:{categories:D.customers.by_channel.map(c=>c.name),labels:{style:{fontSize:'9px'},rotate:-25,trim:true}},
+    yaxis:{labels:{style:{fontSize:'9px'}}},
+    plotOptions:{bar:{borderRadius:0,horizontal:true,barHeight:'55%',distributed:true}},
+    colors:[C.cyan,C.blue,C.violet,C.magenta,C.amber,C.green],
+    legend:{show:false},tooltip:{...baseOpts.tooltip,y:{formatter:fmtN}}});
+
+  const histOpt=(cats,vals,color)=>({...baseOpts,chart:{...baseOpts.chart,type:'bar',height:240},
+    series:[{name:'Clientes',data:vals}],
+    xaxis:{categories:cats,labels:{style:{fontSize:'8px'}}},
+    yaxis:{labels:{style:{fontSize:'8px'}}},
+    plotOptions:{bar:{borderRadius:0,columnWidth:'70%'}},
+    colors:[color],fill:{type:'gradient',gradient:{shade:'dark',gradientToColors:[C.magenta],opacityFrom:.95,opacityTo:.6}},
+    legend:{show:false},tooltip:{...baseOpts.tooltip,y:{formatter:fmtN}}});
+  mount('cAge',histOpt(D.customers.age_hist.map(x=>x.name),D.customers.age_hist.map(x=>x.count),C.cyan));
+  mount('cRec',histOpt(D.customers.recency_hist.map(x=>x.name),D.customers.recency_hist.map(x=>x.count),C.amber));
+  mount('cFreq',histOpt(D.customers.frequency_hist.map(x=>x.name),D.customers.frequency_hist.map(x=>x.count),C.violet));
+  mount('cLtv',histOpt(D.customers.ltv_hist.map(x=>x.name),D.customers.ltv_hist.map(x=>x.count),C.green));
+
+  /* ===== PRODUCTS ===== */
+  const colorBy=p=>p.y>12?C.magenta:p.y>=8?C.amber:C.cyan;
+  const catsScatter={};
+  D.products.scatter.forEach(p=>{
+    const col=colorBy(p);
+    (catsScatter[col]=catsScatter[col]||[]).push({x:p.x,y:p.y,z:p.z,name:p.name});
+  });
+  mount('pScatter',{...baseOpts,chart:{...baseOpts.chart,type:'bubble',height:300},
+    series:[
+      {name:'BAIXO RISCO',data:(catsScatter[C.cyan]||[])},
+      {name:'NEUTRO',data:(catsScatter[C.amber]||[])},
+      {name:'ALERTA',data:(catsScatter[C.magenta]||[])},
+    ],
+    colors:[C.cyan,C.amber,C.magenta],
+    fill:{opacity:.55},
+    xaxis:{title:{text:'RATING',style:{color:C.mute,fontSize:'9px'}},min:3.6,max:4.5,tickAmount:6,labels:{formatter:v=>(+v).toFixed(1),style:{fontSize:'9px'}}},
+    yaxis:{title:{text:'DEVOLUÇÃO %',style:{color:C.mute,fontSize:'9px'}},labels:{formatter:v=>v.toFixed(0)+'%',style:{fontSize:'9px'}}},
+    plotOptions:{bubble:{minBubbleRadius:3,maxBubbleRadius:18}},
+    legend:{...baseOpts.legend,position:'top',fontSize:'9px'},
+    tooltip:{...baseOpts.tooltip,custom:({seriesIndex,dataPointIndex,w})=>{
+      const d=w.config.series[seriesIndex].data[dataPointIndex];
+      return `<div style="padding:8px 10px;font-family:'JetBrains Mono';font-size:11px"><b style="color:#fff">${d.name}</b><br>RATING ${d.x} · DEV ${d.y}% · ${d.z} ped.</div>`;
+    }}});
+
+  renderTable('pTop',D.products.top_revenue,false);
+  renderTable('pWorst',D.products.worst_returns,true);
+
+  mount('pPrice',{...baseOpts,chart:{...baseOpts.chart,type:'bar',height:240},
+    series:[{name:'Preço médio',data:D.products.avg_price_by_cat.map(c=>c.avg_price)}],
+    xaxis:{categories:D.products.avg_price_by_cat.map(c=>c.name),labels:{style:{fontSize:'8px'},rotate:-40,trim:true}},
+    yaxis:{labels:{formatter:v=>'$'+v.toFixed(0),style:{fontSize:'9px'}}},
+    plotOptions:{bar:{borderRadius:0,columnWidth:'52%'}},
+    colors:[C.cyan],fill:{type:'gradient',gradient:{shade:'dark',gradientToColors:[C.violet],opacityFrom:.95,opacityTo:.8}},
+    legend:{show:false},tooltip:{...baseOpts.tooltip,y:{formatter:v=>'$'+v.toFixed(2)}}});
+
+  document.getElementById('fgen').textContent='DATASET '+(D.generated_from||'OK')+' · LOADED';
+}
+
+/* ---- helpers ---- */
+function renderBars(id,rows,fmt,amber){
+  const max=Math.max(...rows.map(r=>r.v));
+  const el=document.getElementById(id);
+  el.innerHTML=rows.map((r,i)=>`
+    <div class="bar">
+      <span class="nm">${r.nm}</span>
+      <span class="track"><span class="fill ${amber?'amber':''}" data-w="${(r.v/max*100).toFixed(1)}"></span></span>
+      <span class="vv">${fmt(r.v)}</span>
+    </div>`).join('');
+  // animate after paint
+  requestAnimationFrame(()=>{
+    el.querySelectorAll('.fill').forEach((f,i)=>setTimeout(()=>f.style.width=f.dataset.w+'%',i*60));
+  });
+}
+function renderTable(id,rows,risk){
+  const el=document.getElementById(id);
+  el.innerHTML=`<thead><tr><th>SKU</th><th class="r">PED</th><th class="r">RECEITA</th><th class="r">★</th><th class="r">DEV%</th></tr></thead>
+  <tbody>${rows.map(p=>`<tr>
+    <td><span class="pn">${p.name}</span><br><span class="pill">${p.category}</span></td>
+    <td class="r">${fmtN(p.orders)}</td>
+    <td class="r" style="color:#fff">${fmtK(p.revenue)}</td>
+    <td class="r">${p.avg_rating.toFixed(1)}</td>
+    <td class="r ${risk||p.return_rate>10?'hot':'good'}">${p.return_rate.toFixed(0)}%</td>
+  </tr>`).join('')}</tbody>`;
+}
+function animNum(id,target,fmt){
+  const el=document.getElementById(id);let s=null,dur=1400;
+  function step(t){if(!s)s=t;const p=Math.min((t-s)/dur,1);const e=1-Math.pow(1-p,3);el.textContent=fmt(target*e);if(p<1)requestAnimationFrame(step);}
+  requestAnimationFrame(step);
+}
+
+/* ---- tabs ---- */
+document.getElementById('tabs').addEventListener('click',e=>{
+  const b=e.target.closest('.tab');if(!b)return;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
+  b.classList.add('active');
+  document.getElementById(b.dataset.pane).classList.add('active');
+  window.dispatchEvent(new Event('resize'));
+});
+</script>
+</body>
+</html>

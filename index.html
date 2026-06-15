@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<title>Dashboards de E-commerce · Três variações de design</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="description" content="Mesmo dataset, três interpretações de design. Escolha um dashboard para explorar."/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Spline+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0c10; --panel:#121319; --line:rgba(255,255,255,.09);
+    --ink:#f4f5f7; --dim:#a0a4ad; --faint:#6b7280;
+    --accent:#7dd3fc; --accent2:#fca5a5;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:'Spline Sans',system-ui,sans-serif;background:var(--bg);color:var(--ink);
+    min-height:100vh;line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden;
+  }
+  /* atmospheric backdrop */
+  .glow{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+  .glow b{position:absolute;border-radius:50%;filter:blur(120px);opacity:.5}
+  .glow .g1{width:520px;height:520px;background:#0ea5b7;top:-180px;left:-120px}
+  .glow .g2{width:480px;height:480px;background:#b3331f;top:30%;right:-160px;opacity:.32}
+  .glow .g3{width:460px;height:460px;background:#7c3aed;bottom:-200px;left:35%;opacity:.3}
+  .grain{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.04;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+
+  .wrap{position:relative;z-index:1;max-width:1240px;margin:0 auto;padding:clamp(40px,7vw,90px) 24px 64px}
+
+  header{max-width:760px;margin-bottom:clamp(36px,5vw,60px)}
+  .kicker{display:inline-flex;align-items:center;gap:8px;font-size:12px;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:18px}
+  .kicker .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px var(--accent)}
+  h1{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;line-height:1.02;
+    font-size:clamp(34px,6vw,62px);letter-spacing:-.02em;margin-bottom:18px}
+  h1 em{font-style:italic;font-weight:600;color:var(--accent)}
+  .lede{font-size:clamp(15px,1.4vw,18px);color:var(--dim);max-width:620px}
+  .meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}
+  .chip{font-size:12px;color:var(--dim);border:1px solid var(--line);border-radius:999px;
+    padding:6px 13px;background:rgba(255,255,255,.02)}
+  .chip b{color:var(--ink);font-weight:600}
+
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+  @media(max-width:900px){.grid{grid-template-columns:1fr}}
+
+  .card{display:flex;flex-direction:column;text-decoration:none;color:inherit;
+    background:var(--panel);border:1px solid var(--line);border-radius:20px;overflow:hidden;
+    transition:transform .35s cubic-bezier(.2,.8,.2,1),border-color .35s,box-shadow .35s;
+    opacity:0;transform:translateY(22px);animation:rise .7s cubic-bezier(.2,.8,.2,1) forwards}
+  .card:nth-child(1){animation-delay:.05s}
+  .card:nth-child(2){animation-delay:.15s}
+  .card:nth-child(3){animation-delay:.25s}
+  @keyframes rise{to{opacity:1;transform:none}}
+  .card:hover{transform:translateY(-8px);border-color:rgba(255,255,255,.22);
+    box-shadow:0 24px 60px -18px rgba(0,0,0,.7)}
+
+  .shot{position:relative;aspect-ratio:16/10;overflow:hidden;background:#000;border-bottom:1px solid var(--line)}
+  .shot img{width:100%;height:100%;object-fit:cover;object-position:top center;
+    transition:transform .6s cubic-bezier(.2,.8,.2,1);display:block}
+  .card:hover .shot img{transform:scale(1.05)}
+  .num{position:absolute;top:14px;left:14px;font-family:'Bricolage Grotesque',sans-serif;
+    font-weight:800;font-size:13px;letter-spacing:.05em;color:#fff;background:rgba(0,0,0,.55);
+    backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:4px 9px}
+  .shot::after{content:"";position:absolute;inset:0;
+    background:linear-gradient(to top,rgba(18,19,25,.55),transparent 45%)}
+
+  .body{padding:20px 20px 22px;display:flex;flex-direction:column;flex:1}
+  .body h2{font-family:'Bricolage Grotesque',sans-serif;font-size:21px;font-weight:600;
+    letter-spacing:-.01em;margin-bottom:4px}
+  .body .sub{font-size:12.5px;color:var(--accent);font-weight:500;margin-bottom:12px;letter-spacing:.01em}
+  .body p{font-size:13.5px;color:var(--dim);margin-bottom:16px}
+  .tags{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:18px}
+  .tag{font-size:11px;color:var(--faint);border:1px solid var(--line);border-radius:6px;padding:3px 8px}
+  .open{margin-top:auto;display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:14px;color:var(--ink)}
+  .open .arrow{transition:transform .3s}
+  .card:hover .open .arrow{transform:translateX(5px)}
+
+  footer{margin-top:56px;padding-top:24px;border-top:1px solid var(--line);
+    font-size:12.5px;color:var(--faint);display:flex;flex-wrap:wrap;gap:6px 18px;justify-content:space-between}
+  footer a{color:var(--dim);text-decoration:none}
+  footer a:hover{color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="glow"><b class="g1"></b><b class="g2"></b><b class="g3"></b></div>
+<div class="grain"></div>
+
+<div class="wrap">
+  <header>
+    <span class="kicker"><span class="dot"></span>Avaliação de modelos · Dashboard de E-commerce</span>
+    <h1>Mesmo dado,<br><em>três</em> interpretações de design.</h1>
+    <p class="lede">Um único dataset de e-commerce, três direções estéticas distintas construídas para comparação.
+       Escolha um cartão para abrir o dashboard correspondente em tela cheia.</p>
+    <div class="meta">
+      <span class="chip"><b>25.000</b> pedidos</span>
+      <span class="chip"><b>8.000</b> clientes</span>
+      <span class="chip"><b>$3,13M</b> de receita</span>
+      <span class="chip">jan/2020 – mar/2026</span>
+    </div>
+  </header>
+
+  <main class="grid">
+
+    <a class="card" href="dashboard/index.html">
+      <div class="shot"><span class="num">01</span><img src="previews/preview-original.png" alt="Prévia do dashboard Aurora (design-system)" loading="lazy"></div>
+      <div class="body">
+        <h2>Aurora</h2>
+        <div class="sub">Design System · Glassmorphism</div>
+        <p>A referência. Tema escuro com cartões de vidro fosco, KPIs em cores saturadas e gráficos desenhados à mão — 100% fiel ao design-system, sem bibliotecas.</p>
+        <div class="tags"><span class="tag">Dark glass</span><span class="tag">Hand-drawn SVG</span><span class="tag">Tailwind</span></div>
+        <span class="open">Abrir dashboard <span class="arrow">→</span></span>
+      </div>
+    </a>
+
+    <a class="card" href="dashboard/variation-a.html">
+      <div class="shot"><span class="num">02</span><img src="previews/preview-a.png" alt="Prévia do dashboard O Balanço (editorial)" loading="lazy"></div>
+      <div class="body">
+        <h2>O Balanço</h2>
+        <div class="sub">Editorial · Revista de dados</div>
+        <p>Uma publicação impressa de dados: serifa de display Fraunces, papel jornal, vermelho editorial, capitular e colunas justificadas. Gráficos ECharts re-tematizados.</p>
+        <div class="tags"><span class="tag">Editorial</span><span class="tag">Serif display</span><span class="tag">ECharts</span></div>
+        <span class="open">Abrir dashboard <span class="arrow">→</span></span>
+      </div>
+    </a>
+
+    <a class="card" href="dashboard/variation-b.html">
+      <div class="shot"><span class="num">03</span><img src="previews/preview-b.png" alt="Prévia do dashboard NEXUS Terminal (synthwave)" loading="lazy"></div>
+      <div class="body">
+        <h2>NEXUS // Terminal</h2>
+        <div class="sub">Retro-futurista · Synthwave</div>
+        <p>Um terminal de trading neon: Orbitron + JetBrains Mono, ciano e magenta sobre quase-preto, sequência de boot, ticker ao vivo e painéis HUD. Gráficos ApexCharts.</p>
+        <div class="tags"><span class="tag">Neon terminal</span><span class="tag">Monospace</span><span class="tag">ApexCharts</span></div>
+        <span class="open">Abrir dashboard <span class="arrow">→</span></span>
+      </div>
+    </a>
+
+  </main>
+
+  <footer>
+    <span>Três variações sobre o mesmo <code>dataset/*.csv</code> · agregado por <code>scripts/aggregate.py</code>.</span>
+    <span>Dica: cada dashboard tem 4 abas — Visão Geral · Vendas · Clientes · Produtos.</span>
+  </footer>
+</div>
+</body></html>

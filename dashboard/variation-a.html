@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>O Balanço — Revista de Dados do Comércio</title>
+
+<!-- Distinctive editorial type: Fraunces (display serif), Newsreader (body serif), Archivo (grotesque labels) -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&family=Archivo:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+
+<style>
+  :root{
+    --paper:#f3ece0;        /* warm newsprint */
+    --paper-2:#ece2d2;
+    --ink:#1b1714;          /* near-black ink */
+    --ink-soft:#4a423a;
+    --rule:#c9bba4;         /* hairline */
+    --red:#b3331f;          /* editorial vermilion */
+    --gold:#b88a2e;
+    --teal:#2f5d57;
+    --plum:#5a3550;
+    --blue:#33506e;
+    --sand:#d8c8ab;
+    --max:1180px;
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"Newsreader",Georgia,serif;
+    font-size:18px;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+    background-image:
+      radial-gradient(circle at 18% 12%, rgba(179,51,31,0.05), transparent 40%),
+      radial-gradient(circle at 85% 0%, rgba(47,93,87,0.05), transparent 35%);
+  }
+  /* paper grain */
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:9999;mix-blend-mode:multiply;opacity:.5;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  }
+
+  .wrap{max-width:var(--max);margin:0 auto;padding:0 28px;}
+
+  /* ---- Masthead ---- */
+  header.masthead{border-bottom:4px double var(--ink);}
+  .masthead .wrap{padding-top:22px;padding-bottom:14px;}
+  .dateline{
+    font-family:"Archivo",sans-serif;font-weight:600;font-size:11px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--ink-soft);display:flex;justify-content:space-between;
+    border-bottom:1px solid var(--rule);padding-bottom:8px;margin-bottom:10px;flex-wrap:wrap;gap:8px;
+  }
+  .masthead h1{
+    font-family:"Fraunces",serif;font-weight:900;font-optical-sizing:144;
+    font-size:clamp(44px,9vw,108px);line-height:.9;letter-spacing:-.02em;margin:6px 0 4px;text-align:center;
+  }
+  .masthead h1 em{font-style:italic;color:var(--red);font-weight:600;}
+  .subhead{
+    text-align:center;font-style:italic;color:var(--ink-soft);font-size:clamp(15px,2vw,20px);
+    border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);padding:8px 0;margin-top:8px;
+    display:flex;justify-content:center;gap:18px;flex-wrap:wrap;
+  }
+  .subhead b{font-style:normal;font-family:"Archivo";font-weight:700;letter-spacing:.1em;text-transform:uppercase;font-size:11px;color:var(--ink);align-self:center;}
+
+  /* ---- Sticky nav ---- */
+  nav.tabs{position:sticky;top:0;z-index:50;background:var(--paper);border-bottom:2px solid var(--ink);}
+  nav.tabs .wrap{display:flex;gap:0;overflow-x:auto;}
+  nav.tabs button{
+    flex:1;min-width:120px;background:none;border:none;cursor:pointer;
+    font-family:"Archivo",sans-serif;font-weight:700;font-size:12px;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--ink-soft);padding:14px 10px;border-right:1px solid var(--rule);position:relative;transition:color .2s,background .2s;
+  }
+  nav.tabs button:last-child{border-right:none;}
+  nav.tabs button:hover{color:var(--ink);background:rgba(0,0,0,.03);}
+  nav.tabs button.active{color:var(--ink);}
+  nav.tabs button.active::after{content:"";position:absolute;left:0;right:0;bottom:-2px;height:4px;background:var(--red);}
+  nav.tabs button .no{font-family:"Fraunces";font-style:italic;font-weight:500;margin-right:6px;color:var(--red);}
+
+  /* ---- Sections / reveal ---- */
+  section.spread{display:none;padding:42px 0 64px;}
+  section.spread.show{display:block;}
+  .reveal{opacity:0;transform:translateY(22px);}
+  .show .reveal{animation:rise .8s cubic-bezier(.2,.7,.2,1) forwards;}
+  @keyframes rise{to{opacity:1;transform:none;}}
+
+  /* ---- Editorial primitives ---- */
+  .kicker{font-family:"Archivo";font-weight:700;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--red);margin:0 0 6px;}
+  h2.head{font-family:"Fraunces";font-weight:800;font-size:clamp(30px,5vw,52px);line-height:.98;letter-spacing:-.02em;margin:0 0 4px;}
+  h2.head em{font-style:italic;color:var(--teal);font-weight:500;}
+  .deck{font-style:italic;color:var(--ink-soft);max-width:62ch;margin:0 0 26px;font-size:19px;}
+  .rule{border:none;border-top:1px solid var(--rule);margin:0 0 26px;}
+  .rule.thick{border-top:3px solid var(--ink);}
+
+  .grid{display:grid;gap:26px;}
+  .c12{grid-template-columns:repeat(12,1fr);}
+  .span4{grid-column:span 4;} .span5{grid-column:span 5;} .span6{grid-column:span 6;}
+  .span7{grid-column:span 7;} .span8{grid-column:span 8;} .span12{grid-column:span 12;}
+  @media(max-width:860px){.span4,.span5,.span6,.span7,.span8{grid-column:span 12;}}
+
+  /* article card – like a column with a hairline frame */
+  .col{border-top:2px solid var(--ink);padding-top:14px;}
+  .col h3{font-family:"Fraunces";font-weight:700;font-size:22px;margin:0 0 2px;letter-spacing:-.01em;}
+  .col .src{font-family:"Archivo";font-weight:600;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft);}
+
+  /* Big stat / drop-figure */
+  .figure-block{border-top:3px solid var(--ink);padding-top:10px;}
+  .figure-block .lbl{font-family:"Archivo";font-weight:700;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft);}
+  .figure-block .big{font-family:"Fraunces";font-weight:900;font-optical-sizing:144;font-size:clamp(40px,6vw,66px);line-height:.92;letter-spacing:-.03em;margin:4px 0 2px;}
+  .figure-block .sub{font-style:italic;color:var(--ink-soft);font-size:15px;}
+  .figure-block .big small{font-size:.42em;font-weight:600;color:var(--red);font-family:"Archivo";letter-spacing:0;}
+
+  /* lead paragraph w/ drop cap */
+  .lede{column-gap:34px;}
+  @media(min-width:860px){.lede{columns:2;}}
+  .lede p{margin:0 0 14px;text-align:justify;hyphens:auto;}
+  .lede p:first-of-type::first-letter{
+    font-family:"Fraunces";font-weight:900;float:left;font-size:84px;line-height:.66;padding:8px 10px 0 0;color:var(--red);
+  }
+
+  /* ranked table list */
+  table.ed{width:100%;border-collapse:collapse;}
+  table.ed th{font-family:"Archivo";font-weight:700;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft);text-align:right;padding:6px 8px;border-bottom:2px solid var(--ink);}
+  table.ed th:first-child{text-align:left;}
+  table.ed td{padding:9px 8px;border-bottom:1px solid var(--rule);font-size:16px;vertical-align:baseline;}
+  table.ed td:not(:first-child){text-align:right;font-variant-numeric:tabular-nums;}
+  table.ed td .rk{font-family:"Fraunces";font-style:italic;color:var(--red);font-weight:600;margin-right:10px;}
+  table.ed td .cat{display:block;font-family:"Archivo";font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);}
+  table.ed tr:hover td{background:rgba(184,138,46,.08);}
+
+  .chart{width:100%;}
+  .pull{font-family:"Fraunces";font-style:italic;font-weight:400;font-size:clamp(22px,3vw,30px);line-height:1.25;color:var(--ink);border-left:3px solid var(--red);padding-left:18px;margin:6px 0;}
+
+  .barlist{list-style:none;margin:0;padding:0;}
+  .barlist li{display:grid;grid-template-columns:1fr auto;gap:6px 12px;padding:8px 0;border-bottom:1px solid var(--rule);align-items:baseline;}
+  .barlist .nm{font-size:16px;}
+  .barlist .vl{font-family:"Fraunces";font-weight:700;font-variant-numeric:tabular-nums;}
+  .barlist .track{grid-column:1/-1;height:7px;background:var(--paper-2);border:1px solid var(--rule);position:relative;overflow:hidden;}
+  .barlist .track i{position:absolute;left:0;top:0;bottom:0;background:var(--ink);width:0;transition:width 1.1s cubic-bezier(.2,.7,.2,1);}
+  .show .barlist .track i{width:var(--w);}
+
+  footer{border-top:4px double var(--ink);margin-top:30px;}
+  footer .wrap{padding:22px 28px 50px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:14px;font-family:"Archivo";font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);}
+
+  .loading{position:fixed;inset:0;background:var(--paper);display:flex;align-items:center;justify-content:center;z-index:200;font-family:"Fraunces";font-style:italic;font-size:26px;color:var(--ink-soft);}
+  .badge{display:inline-block;font-family:"Archivo";font-weight:700;font-size:9px;letter-spacing:.14em;text-transform:uppercase;padding:3px 7px;border:1px solid var(--ink);border-radius:2px;}
+  .badge.up{color:var(--teal);border-color:var(--teal);}
+  .badge.dn{color:var(--red);border-color:var(--red);}
+</style>
+</head>
+<body>
+
+<div class="loading" id="loading">Preparando a edição…</div>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="dateline">
+      <span>Vol. VI · No. 25.000</span>
+      <span id="dl-date">Edição de Junho · MMXXVI</span>
+      <span>Comércio &amp; Consumo</span>
+    </div>
+    <h1>O Balanço<em>.</em></h1>
+    <div class="subhead">
+      <b>Revista de Dados</b>
+      <span>Uma análise editorial de 25 mil pedidos, oito mil clientes e seis anos de comércio.</span>
+      <b>USD</b>
+    </div>
+  </div>
+</header>
+
+<nav class="tabs" id="tabs">
+  <button data-tab="overview" class="active"><span class="no">I.</span>Panorama</button>
+  <button data-tab="sales"><span class="no">II.</span>Vendas</button>
+  <button data-tab="customers"><span class="no">III.</span>Clientes</button>
+  <button data-tab="products"><span class="no">IV.</span>Produtos</button>
+</nav>
+
+<main class="wrap">
+
+  <!-- ===================== I. OVERVIEW ===================== -->
+  <section class="spread show" id="overview">
+    <div class="grid c12">
+      <div class="span8 reveal">
+        <p class="kicker">A Edição em Números</p>
+        <h2 class="head">Seis anos de <em>comércio</em>, em uma só página.</h2>
+        <div class="lede" style="margin-top:18px;">
+          <p id="lede-p1"></p>
+          <p id="lede-p2"></p>
+        </div>
+      </div>
+      <div class="span4 reveal" style="animation-delay:.08s">
+        <div class="figure-block" id="fb-rev"></div>
+        <div class="figure-block" style="margin-top:22px;" id="fb-ord"></div>
+      </div>
+    </div>
+
+    <hr class="rule thick" style="margin:36px 0 26px;">
+
+    <div class="grid c12">
+      <div class="span3 reveal" style="grid-column:span 3;animation-delay:.05s"><div class="figure-block" id="kpi-aov"></div></div>
+      <div class="span3 reveal" style="grid-column:span 3;animation-delay:.1s"><div class="figure-block" id="kpi-ret"></div></div>
+      <div class="span3 reveal" style="grid-column:span 3;animation-delay:.15s"><div class="figure-block" id="kpi-rep"></div></div>
+      <div class="span3 reveal" style="grid-column:span 3;animation-delay:.2s"><div class="figure-block" id="kpi-rat"></div></div>
+    </div>
+    <style>@media(max-width:860px){#overview .span3{grid-column:span 6 !important;}}</style>
+
+    <hr class="rule" style="margin:34px 0 22px;">
+
+    <div class="grid c12">
+      <div class="span8 reveal col">
+        <span class="src">Figura 1 — Receita mensal, jan/2020 → mar/2026</span>
+        <h3>A maré da receita</h3>
+        <div class="chart" id="ch-revtrend" style="height:330px;margin-top:6px;"></div>
+      </div>
+      <div class="span4 reveal col" style="animation-delay:.1s">
+        <span class="src">Figura 2 — Participação por categoria</span>
+        <h3>De onde vem o dinheiro</h3>
+        <div class="chart" id="ch-catshare" style="height:330px;margin-top:6px;"></div>
+      </div>
+    </div>
+
+    <div class="grid c12" style="margin-top:30px;">
+      <div class="span12 reveal">
+        <p class="pull" id="pull-1"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== II. SALES ===================== -->
+  <section class="spread" id="sales">
+    <p class="kicker">Caderno II — Vendas</p>
+    <h2 class="head">A anatomia de uma <em>compra</em>.</h2>
+    <p class="deck">Como, quando e em que dispositivos o dinheiro troca de mãos — uma leitura por categoria, meio de pagamento, tela e estação do ano.</p>
+    <hr class="rule thick">
+
+    <div class="grid c12">
+      <div class="span7 reveal col">
+        <span class="src">Quadro A — Receita por categoria (USD)</span>
+        <h3>O ranking das prateleiras</h3>
+        <table class="ed" id="tb-cat" style="margin-top:8px;"></table>
+      </div>
+      <div class="span5 reveal col" style="animation-delay:.1s">
+        <span class="src">Figura 3 — Calor sazonal por mês × ano</span>
+        <h3>O calendário da demanda</h3>
+        <div class="chart" id="ch-season" style="height:300px;margin-top:6px;"></div>
+        <p style="font-style:italic;color:var(--ink-soft);font-size:14px;margin-top:8px;">Quanto mais escuro, mais vendas naquele mês. Dezembros e marços puxam a fila.</p>
+      </div>
+    </div>
+
+    <hr class="rule" style="margin:32px 0 24px;">
+
+    <div class="grid c12">
+      <div class="span4 reveal col">
+        <span class="src">Figura 4 — Meio de pagamento</span>
+        <h3>Na hora de pagar</h3>
+        <ul class="barlist" id="bl-pay" style="margin-top:8px;"></ul>
+      </div>
+      <div class="span4 reveal col" style="animation-delay:.08s">
+        <span class="src">Figura 5 — Dispositivo de compra</span>
+        <h3>Em qual tela</h3>
+        <div class="chart" id="ch-device" style="height:240px;margin-top:6px;"></div>
+      </div>
+      <div class="span4 reveal col" style="animation-delay:.16s">
+        <span class="src">Figura 6 — Receita por dia da semana</span>
+        <h3>O pulso da semana</h3>
+        <div class="chart" id="ch-dow" style="height:240px;margin-top:6px;"></div>
+      </div>
+    </div>
+
+    <hr class="rule" style="margin:32px 0 24px;">
+
+    <div class="grid c12">
+      <div class="span8 reveal col">
+        <span class="src">Figura 7 — Taxa de devolução mês a mês (%)</span>
+        <h3>O preço do arrependimento</h3>
+        <div class="chart" id="ch-return" style="height:280px;margin-top:6px;"></div>
+      </div>
+      <div class="span4 reveal col" style="animation-delay:.1s">
+        <span class="src">Quadro B — Prazo médio de entrega por categoria</span>
+        <h3>A espera</h3>
+        <ul class="barlist" id="bl-delivery" style="margin-top:8px;"></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== III. CUSTOMERS ===================== -->
+  <section class="spread" id="customers">
+    <p class="kicker">Caderno III — Clientes</p>
+    <h2 class="head">Quem são os <em>oito mil</em>.</h2>
+    <p class="deck">Um retrato demográfico e comportamental da base — idade, fidelidade, origem e o risco silencioso da evasão.</p>
+    <hr class="rule thick">
+
+    <div class="grid c12">
+      <div class="span3 reveal" style="grid-column:span 3;"><div class="figure-block" id="cu-total"></div></div>
+      <div class="span3 reveal" style="grid-column:span 3;animation-delay:.06s"><div class="figure-block" id="cu-churn"></div></div>
+      <div class="span3 reveal" style="grid-column:span 3;animation-delay:.12s"><div class="figure-block" id="cu-news"></div></div>
+      <div class="span3 reveal" style="grid-column:span 3;animation-delay:.18s"><div class="figure-block" id="cu-rep"></div></div>
+    </div>
+    <style>@media(max-width:860px){#customers .span3{grid-column:span 6 !important;}}</style>
+
+    <hr class="rule" style="margin:32px 0 24px;">
+
+    <div class="grid c12">
+      <div class="span6 reveal col">
+        <span class="src">Figura 8 — Distribuição etária</span>
+        <h3>As gerações que compram</h3>
+        <div class="chart" id="ch-age" style="height:280px;margin-top:6px;"></div>
+      </div>
+      <div class="span6 reveal col" style="animation-delay:.1s">
+        <span class="src">Figura 9 — Gasto médio × evasão, por nível de assinatura</span>
+        <h3>Lealdade tem preço</h3>
+        <div class="chart" id="ch-tier" style="height:280px;margin-top:6px;"></div>
+      </div>
+    </div>
+
+    <hr class="rule" style="margin:32px 0 24px;">
+
+    <div class="grid c12">
+      <div class="span5 reveal col">
+        <span class="src">Quadro C — Países por número de clientes</span>
+        <h3>O mapa da clientela</h3>
+        <table class="ed" id="tb-country" style="margin-top:8px;"></table>
+      </div>
+      <div class="span7 reveal col" style="animation-delay:.1s">
+        <span class="src">Figura 10 — Canais de aquisição: volume e gasto</span>
+        <h3>Por onde eles chegam</h3>
+        <div class="chart" id="ch-channel" style="height:300px;margin-top:6px;"></div>
+      </div>
+    </div>
+
+    <div class="grid c12" style="margin-top:30px;">
+      <div class="span12 reveal"><p class="pull" id="pull-cust"></p></div>
+    </div>
+  </section>
+
+  <!-- ===================== IV. PRODUCTS ===================== -->
+  <section class="spread" id="products">
+    <p class="kicker">Caderno IV — Produtos</p>
+    <h2 class="head">Os <em>protagonistas</em> e os vilões.</h2>
+    <p class="deck">Os itens que sustentam o caixa e aqueles que voltam pelo correio — cruzando preço, nota e devolução.</p>
+    <hr class="rule thick">
+
+    <div class="grid c12">
+      <div class="span7 reveal col">
+        <span class="src">Quadro D — Maiores em receita (Top 15)</span>
+        <h3>Os campeões de bilheteria</h3>
+        <table class="ed" id="tb-top" style="margin-top:8px;"></table>
+      </div>
+      <div class="span5 reveal col" style="animation-delay:.1s">
+        <span class="src">Quadro E — Piores em devolução</span>
+        <h3>O hall da vergonha</h3>
+        <table class="ed" id="tb-worst" style="margin-top:8px;"></table>
+      </div>
+    </div>
+
+    <hr class="rule" style="margin:32px 0 24px;">
+
+    <div class="grid c12">
+      <div class="span8 reveal col">
+        <span class="src">Figura 11 — Nota média × taxa de devolução (tamanho = pedidos)</span>
+        <h3>Bom, bonito e barato?</h3>
+        <div class="chart" id="ch-scatter" style="height:360px;margin-top:6px;"></div>
+        <p style="font-style:italic;color:var(--ink-soft);font-size:14px;margin-top:8px;">Cada bolha é um produto. À direita, mais bem avaliados; embaixo, menos devolvidos — o canto inferior direito é o paraíso.</p>
+      </div>
+      <div class="span4 reveal col" style="animation-delay:.1s">
+        <span class="src">Figura 12 — Preço médio por categoria</span>
+        <h3>O bolso por seção</h3>
+        <ul class="barlist" id="bl-price" style="margin-top:8px;"></ul>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>O Balanço — Revista de Dados do Comércio</span>
+    <span>Composto em Fraunces &amp; Newsreader</span>
+    <span>Fonte: dataset/*.csv · © MMXXVI</span>
+  </div>
+</footer>
+
+<script>
+const BRL = false;
+const fmtUSD = (n,d=0)=> "$"+ (n||0).toLocaleString("en-US",{maximumFractionDigits:d,minimumFractionDigits:d});
+const fmtK = (n)=>{ n=n||0; if(n>=1e6) return "$"+(n/1e6).toFixed(2)+"M"; if(n>=1e3) return "$"+(n/1e3).toFixed(0)+"k"; return "$"+n.toFixed(0); };
+const fmtN = (n)=> (n||0).toLocaleString("pt-BR");
+const PAL = ["#b3331f","#2f5d57","#b88a2e","#33506e","#5a3550","#7a6f5d","#9e5b3a","#3f6b4c","#8a4257","#566e8a"];
+const INK = "#1b1714", SOFT="#4a423a", RULE="#c9bba4", PAPER="#f3ece0", RED="#b3331f";
+
+const baseTextStyle = { fontFamily:"Archivo, sans-serif", color:SOFT, fontSize:11 };
+const axisCommon = {
+  axisLine:{lineStyle:{color:INK}},
+  axisTick:{show:false},
+  axisLabel:{fontFamily:"Archivo, sans-serif", color:SOFT, fontSize:11},
+  splitLine:{lineStyle:{color:RULE, type:"dashed"}}
+};
+const tooltipStyle = {
+  backgroundColor:"#1b1714", borderWidth:0, padding:[8,12],
+  textStyle:{color:"#f3ece0", fontFamily:"Archivo, sans-serif", fontSize:12},
+  extraCssText:"border-radius:2px;box-shadow:none;"
+};
+
+let DATA=null;
+const charts=[];
+function reg(el,opt){ const c=echarts.init(el); c.setOption(opt); charts.push(c); return c; }
+window.addEventListener("resize",()=>charts.forEach(c=>c.resize()));
+
+fetch("./data.json").then(r=>r.json()).then(d=>{
+  DATA=d;
+  document.getElementById("loading").style.display="none";
+  buildAll();
+}).catch(e=>{
+  document.getElementById("loading").textContent="Não foi possível carregar os dados.";
+  console.error(e);
+});
+
+/* ---- Tabs ---- */
+const built = {overview:true};
+document.querySelectorAll("nav.tabs button").forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    const tab=btn.dataset.tab;
+    document.querySelectorAll("nav.tabs button").forEach(b=>b.classList.toggle("active",b===btn));
+    document.querySelectorAll("section.spread").forEach(s=>s.classList.toggle("show",s.id===tab));
+    window.scrollTo({top:0,behavior:"smooth"});
+    // resize charts in the now-visible section (animations need layout)
+    setTimeout(()=>charts.forEach(c=>c.resize()),60);
+  });
+});
+
+function buildAll(){
+  buildOverview();
+  buildSales();
+  buildCustomers();
+  buildProducts();
+}
+
+/* ============ OVERVIEW ============ */
+function buildOverview(){
+  const k=DATA.kpis;
+  document.getElementById("dl-date").textContent="Edição Anual · MMXXVI";
+
+  document.getElementById("lede-p1").innerHTML =
+    `Entre janeiro de 2020 e março de 2026, a operação movimentou <b>${fmtUSD(k.total_revenue)}</b> em ` +
+    `<b>${fmtN(k.total_orders)} pedidos</b> — um ticket médio de <b>${fmtUSD(k.aov,2)}</b>. ` +
+    `A casa atravessou seis anos de comércio com notável estabilidade, sem o sobressalto de um único trimestre dominante.`;
+  document.getElementById("lede-p2").innerHTML =
+    `A fidelidade é o ativo silencioso: <b>${k.repeat_rate}%</b> dos clientes voltam para comprar de novo, ` +
+    `enquanto a devolução se mantém contida em <b>${k.return_rate}%</b>. A nota média de <b>${k.avg_rating.toFixed(1)}</b> em 5 ` +
+    `sugere uma clientela satisfeita, ainda que exigente — terreno fértil para crescer sem queimar o caixa em descontos.`;
+
+  fig("fb-rev","Receita total","<small>USD</small>"+fmtK(k.total_revenue),"Acumulado, 2020–2026");
+  fig("fb-ord","Pedidos","<small>QTD</small>"+fmtN(k.total_orders),"Itens-pedido registrados");
+
+  fig("kpi-aov","Ticket Médio",fmtUSD(k.aov,2),"valor por pedido");
+  fig("kpi-ret","Devolução",k.return_rate+"<small>%</small>","sobre o total de pedidos");
+  fig("kpi-rep","Recompra",k.repeat_rate+"<small>%</small>","clientes que retornam");
+  fig("kpi-rat","Avaliação",k.avg_rating.toFixed(1)+"<small>/5</small>","nota média do cliente");
+
+  document.getElementById("pull-1").textContent =
+    `“Mobile responde por mais da metade da receita; o cartão de crédito, por quase 40%. O futuro desta loja cabe na palma da mão.”`;
+
+  // Revenue trend
+  const m=DATA.monthly;
+  reg(document.getElementById("ch-revtrend"),{
+    grid:{left:54,right:18,top:24,bottom:40},
+    tooltip:{trigger:"axis",...tooltipStyle,valueFormatter:v=>fmtK(v)},
+    xAxis:{type:"category",data:m.map(x=>x.label),...axisCommon,
+      axisLabel:{...axisCommon.axisLabel,interval:11,formatter:(v)=>v.split(" ")[1]}},
+    yAxis:{type:"value",...axisCommon,axisLabel:{...axisCommon.axisLabel,formatter:v=>fmtK(v)}},
+    series:[{
+      type:"line",data:m.map(x=>x.revenue),smooth:true,symbol:"none",
+      lineStyle:{color:RED,width:2.4},
+      areaStyle:{color:new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:"rgba(179,51,31,0.22)"},{offset:1,color:"rgba(179,51,31,0)"}])}
+    }]
+  });
+
+  // Category share – donut
+  const cats=DATA.sales.by_category;
+  reg(document.getElementById("ch-catshare"),{
+    tooltip:{...tooltipStyle,trigger:"item",valueFormatter:v=>fmtK(v)},
+    series:[{
+      type:"pie",radius:["48%","78%"],center:["50%","48%"],
+      data:cats.map((c,i)=>({name:c.name,value:c.revenue,itemStyle:{color:PAL[i%PAL.length]}})),
+      label:{show:false},
+      itemStyle:{borderColor:PAPER,borderWidth:2}
+    }]
+  });
+}
+
+/* ============ SALES ============ */
+function buildSales(){
+  // category table
+  const cats=DATA.sales.by_category;
+  let html="<tr><th>Categoria</th><th>Receita</th><th>Pedidos</th><th>Ticket</th><th>Devol.</th></tr>";
+  cats.forEach((c,i)=>{
+    html+=`<tr><td><span class="rk">${String(i+1).padStart(2,'0')}</span>${c.name}</td>`+
+      `<td>${fmtK(c.revenue)}</td><td>${fmtN(c.orders)}</td><td>${fmtUSD(c.aov,2)}</td>`+
+      `<td>${c.return_rate.toFixed(1)}%</td></tr>`;
+  });
+  document.getElementById("tb-cat").innerHTML=html;
+
+  // seasonality heatmap
+  const s=DATA.sales.seasonality;
+  const months=["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+  const hd=[]; let mn=Infinity,mx=-Infinity;
+  s.forEach((row,yi)=>row.months.forEach((v,mi)=>{ hd.push([mi,yi,v]); mn=Math.min(mn,v); mx=Math.max(mx,v); }));
+  reg(document.getElementById("ch-season"),{
+    grid:{left:46,right:14,top:14,bottom:50},
+    tooltip:{...tooltipStyle,formatter:p=>`${months[p.value[0]]} ${s[p.value[1]].year}<br>${fmtK(p.value[2])}`},
+    xAxis:{type:"category",data:months,...axisCommon,splitLine:{show:false},axisLabel:{...axisCommon.axisLabel}},
+    yAxis:{type:"category",data:s.map(r=>r.year),...axisCommon,splitLine:{show:false}},
+    visualMap:{min:mn,max:mx,show:false,inRange:{color:["#f0e7d8","#d8c8ab","#b88a2e","#9e5b3a","#b3331f"]}},
+    series:[{type:"heatmap",data:hd,itemStyle:{borderColor:PAPER,borderWidth:1.5}}]
+  });
+
+  // payment barlist
+  barlist("bl-pay",DATA.sales.by_payment.map(p=>({nm:p.name,v:p.revenue,disp:fmtK(p.revenue)})));
+
+  // device pie
+  const dev=DATA.sales.by_device;
+  reg(document.getElementById("ch-device"),{
+    tooltip:{...tooltipStyle,trigger:"item",valueFormatter:v=>fmtK(v)},
+    series:[{type:"pie",radius:["0%","72%"],center:["50%","50%"],roseType:"radius",
+      data:dev.map((c,i)=>({name:c.name,value:c.revenue,itemStyle:{color:[RED,"#2f5d57","#b88a2e"][i]}})),
+      label:{fontFamily:"Archivo",color:INK,fontSize:11,formatter:"{b}"},
+      itemStyle:{borderColor:PAPER,borderWidth:2}}]
+  });
+
+  // dow bar
+  const dw=DATA.sales.by_dow;
+  const dlbl={"Monday":"Seg","Tuesday":"Ter","Wednesday":"Qua","Thursday":"Qui","Friday":"Sex","Saturday":"Sáb","Sunday":"Dom"};
+  reg(document.getElementById("ch-dow"),{
+    grid:{left:8,right:8,top:14,bottom:24},
+    tooltip:{...tooltipStyle,trigger:"axis",valueFormatter:v=>fmtK(v)},
+    xAxis:{type:"category",data:dw.map(x=>dlbl[x.name]||x.name),...axisCommon,splitLine:{show:false}},
+    yAxis:{type:"value",show:false,scale:true},
+    series:[{type:"bar",data:dw.map(x=>x.revenue),itemStyle:{color:INK},barWidth:"58%"}]
+  });
+
+  // return line
+  const rm=DATA.sales.return_by_month;
+  reg(document.getElementById("ch-return"),{
+    grid:{left:44,right:16,top:20,bottom:40},
+    tooltip:{...tooltipStyle,trigger:"axis",valueFormatter:v=>v+"%"},
+    xAxis:{type:"category",data:rm.map(x=>x.label),...axisCommon,
+      axisLabel:{...axisCommon.axisLabel,interval:11,formatter:v=>v.split(" ")[1]}},
+    yAxis:{type:"value",...axisCommon,axisLabel:{...axisCommon.axisLabel,formatter:v=>v+"%"}},
+    series:[{type:"line",data:rm.map(x=>x.return_rate),smooth:true,symbol:"none",
+      lineStyle:{color:"#5a3550",width:2.2},
+      markLine:{silent:true,symbol:"none",data:[{type:"average"}],
+        lineStyle:{color:RED,type:"dashed"},label:{fontFamily:"Archivo",fontSize:10,color:RED,formatter:"média"}}}]
+  });
+
+  // delivery barlist
+  const dl=[...DATA.sales.delivery_by_category].sort((a,b)=>b.avg_delivery_days-a.avg_delivery_days);
+  barlist("bl-delivery",dl.map(x=>({nm:x.name,v:x.avg_delivery_days,disp:x.avg_delivery_days.toFixed(1)+" d"})));
+}
+
+/* ============ CUSTOMERS ============ */
+function buildCustomers(){
+  const c=DATA.customers, k=DATA.kpis;
+  fig("cu-total","Base de clientes",fmtN(c.total),"clientes únicos");
+  fig("cu-churn","Evasão",c.churn_rate+"<small>%</small>","taxa de churn");
+  fig("cu-news","Newsletter",c.newsletter_rate.toFixed(0)+"<small>%</small>","assinantes ativos");
+  fig("cu-rep","Recompra",k.repeat_rate+"<small>%</small>","voltam a comprar");
+
+  // age histogram
+  const ah=c.age_hist;
+  reg(document.getElementById("ch-age"),{
+    grid:{left:46,right:14,top:20,bottom:30},
+    tooltip:{...tooltipStyle,trigger:"axis",valueFormatter:v=>fmtN(v)+" clientes"},
+    xAxis:{type:"category",data:ah.map(x=>x.name),...axisCommon,splitLine:{show:false}},
+    yAxis:{type:"value",...axisCommon,axisLabel:{...axisCommon.axisLabel,formatter:v=>fmtN(v)}},
+    series:[{type:"bar",data:ah.map(x=>x.count),barWidth:"62%",
+      itemStyle:{color:new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:"#2f5d57"},{offset:1,color:"#1b3f3a"}])}}]
+  });
+
+  // tier: avg_spend bar + churn line
+  const t=c.by_tier;
+  reg(document.getElementById("ch-tier"),{
+    grid:{left:56,right:48,top:24,bottom:30},
+    tooltip:{...tooltipStyle,trigger:"axis"},
+    legend:{data:["Gasto médio","Evasão"],textStyle:baseTextStyle,bottom:0,itemWidth:14,itemHeight:8},
+    xAxis:{type:"category",data:t.map(x=>x.name),...axisCommon,splitLine:{show:false}},
+    yAxis:[
+      {type:"value",...axisCommon,axisLabel:{...axisCommon.axisLabel,formatter:v=>fmtK(v)}},
+      {type:"value",...axisCommon,splitLine:{show:false},axisLabel:{...axisCommon.axisLabel,formatter:v=>v+"%"}}
+    ],
+    series:[
+      {name:"Gasto médio",type:"bar",data:t.map(x=>x.avg_spend),barWidth:"46%",itemStyle:{color:"#b88a2e"}},
+      {name:"Evasão",type:"line",yAxisIndex:1,data:t.map(x=>x.churn_rate),symbol:"circle",symbolSize:8,
+        lineStyle:{color:RED,width:2.4},itemStyle:{color:RED}}
+    ]
+  });
+
+  // countries table
+  const co=c.top_countries;
+  let h="<tr><th>País</th><th>Clientes</th><th>Gasto total</th></tr>";
+  co.forEach((x,i)=>{ h+=`<tr><td><span class="rk">${String(i+1).padStart(2,'0')}</span>${x.name}</td><td>${fmtN(x.customers)}</td><td>${fmtK(x.spend)}</td></tr>`; });
+  document.getElementById("tb-country").innerHTML=h;
+
+  // channel scatter-ish: bar customers + avg_spend
+  const ch=c.by_channel;
+  reg(document.getElementById("ch-channel"),{
+    grid:{left:60,right:54,top:24,bottom:46},
+    tooltip:{...tooltipStyle,trigger:"axis"},
+    legend:{data:["Clientes","Gasto médio"],textStyle:baseTextStyle,bottom:0,itemWidth:14,itemHeight:8},
+    xAxis:{type:"category",data:ch.map(x=>x.name),...axisCommon,splitLine:{show:false},
+      axisLabel:{...axisCommon.axisLabel,interval:0,rotate:18}},
+    yAxis:[
+      {type:"value",...axisCommon,axisLabel:{...axisCommon.axisLabel,formatter:v=>fmtN(v)}},
+      {type:"value",...axisCommon,splitLine:{show:false},axisLabel:{...axisCommon.axisLabel,formatter:v=>fmtK(v)}}
+    ],
+    series:[
+      {name:"Clientes",type:"bar",data:ch.map(x=>x.customers),barWidth:"44%",itemStyle:{color:INK}},
+      {name:"Gasto médio",type:"line",yAxisIndex:1,data:ch.map(x=>x.avg_spend),symbol:"diamond",symbolSize:9,
+        lineStyle:{color:"#33506e",width:2.4},itemStyle:{color:"#33506e"}}
+    ]
+  });
+
+  document.getElementById("pull-cust").textContent =
+    `“Um em cada onze clientes some a cada ciclo — mas os ${c.newsletter_rate.toFixed(0)}% inscritos na newsletter são a corda que segura a base.”`;
+}
+
+/* ============ PRODUCTS ============ */
+function buildProducts(){
+  const p=DATA.products;
+  // top revenue
+  let h="<tr><th>Produto</th><th>Pedidos</th><th>Receita</th><th>Nota</th></tr>";
+  p.top_revenue.forEach((x,i)=>{
+    h+=`<tr><td><span class="rk">${String(i+1).padStart(2,'0')}</span>${x.name}<span class="cat">${x.category}</span></td>`+
+      `<td>${fmtN(x.orders)}</td><td>${fmtK(x.revenue)}</td><td>${x.avg_rating.toFixed(1)}</td></tr>`;
+  });
+  document.getElementById("tb-top").innerHTML=h;
+
+  // worst returns
+  let h2="<tr><th>Produto</th><th>Devol.</th><th>Nota</th></tr>";
+  p.worst_returns.forEach((x,i)=>{
+    h2+=`<tr><td><span class="rk">${String(i+1).padStart(2,'0')}</span>${x.name}<span class="cat">${x.category}</span></td>`+
+      `<td>${x.return_rate.toFixed(1)}%</td><td>${x.avg_rating.toFixed(1)}</td></tr>`;
+  });
+  document.getElementById("tb-worst").innerHTML=h2;
+
+  // scatter rating vs return, bubble = orders, color by category
+  const sc=p.scatter;
+  const catList=[...new Set(sc.map(d=>d.category))];
+  const colorOf=cn=>PAL[catList.indexOf(cn)%PAL.length];
+  const maxZ=Math.max(...sc.map(d=>d.z));
+  reg(document.getElementById("ch-scatter"),{
+    grid:{left:54,right:20,top:24,bottom:44},
+    tooltip:{...tooltipStyle,formatter:o=>`<b>${o.data[3]}</b><br>${o.data[4]}<br>Nota ${o.data[0]} · Devol. ${o.data[1]}% · ${fmtN(o.data[2])} ped.`},
+    xAxis:{name:"Nota média",nameLocation:"middle",nameGap:28,nameTextStyle:baseTextStyle,
+      type:"value",min:2.5,max:5,...axisCommon},
+    yAxis:{name:"Devolução %",nameLocation:"middle",nameGap:36,nameTextStyle:baseTextStyle,
+      type:"value",...axisCommon},
+    series:[{
+      type:"scatter",
+      data:sc.map(d=>[d.x,d.y,d.z,d.name,d.category]),
+      symbolSize:v=>8+(v[2]/maxZ)*34,
+      itemStyle:{color:p=>colorOf(p.data[4]),opacity:.72,borderColor:INK,borderWidth:.5}
+    }]
+  });
+
+  // price by cat
+  const pr=[...p.avg_price_by_cat].sort((a,b)=>b.avg_price-a.avg_price);
+  barlist("bl-price",pr.map(x=>({nm:x.name,v:x.avg_price,disp:fmtUSD(x.avg_price,2)})));
+}
+
+/* ---- helpers ---- */
+function fig(id,lbl,big,sub){
+  const el=document.getElementById(id); if(!el)return;
+  el.innerHTML=`<div class="lbl">${lbl}</div><div class="big">${big}</div><div class="sub">${sub||""}</div>`;
+}
+function barlist(id,items){
+  const el=document.getElementById(id); if(!el)return;
+  const mx=Math.max(...items.map(i=>i.v));
+  el.innerHTML=items.map(i=>(
+    `<li><span class="nm">${i.nm}</span><span class="vl">${i.disp}</span>`+
+    `<span class="track"><i style="--w:${(i.v/mx*100).toFixed(1)}%"></i></span></li>`
+  )).join("");
+}
+</script>
+</body>
+</html>
