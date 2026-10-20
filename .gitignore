@@ -4,3 +4,11 @@
 # Arquivos de controle dos scripts do Excalidraw
 scripts/.excalidraw.pid
 scripts/.excalidraw.log
+
+# App ServiceNow: artefatos de build e credenciais
+servicenow-app/node_modules/
+servicenow-app/dist/
+servicenow-app/target/
+servicenow-app/.now/
+servicenow-app/.sn-upload.json
+servicenow-app/get_data.sh

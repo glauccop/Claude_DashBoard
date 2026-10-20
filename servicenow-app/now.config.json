@@ -1,0 +1,6 @@
+{
+  "scope": "x_snc_dashboard_se",
+  "scopeId": "0253114837cd4785a997c62733b0c278",
+  "name": "Dashboard ServiceNow",
+  "tsconfigPath": "./src/server/tsconfig.json"
+}

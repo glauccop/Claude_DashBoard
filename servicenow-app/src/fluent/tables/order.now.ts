@@ -1,0 +1,45 @@
+import { Table, StringColumn, IntegerColumn, DecimalColumn, DateColumn, BooleanColumn } from '@servicenow/sdk/core'
+
+// Orders (25k) — fonte: dataset/orders.csv
+export const x_snc_dashboard_se_order = Table({
+    name: 'x_snc_dashboard_se_order',
+    label: 'Order',
+    display: 'order_id',
+    allowWebServiceAccess: true,
+    schema: {
+        order_id: StringColumn({ label: 'Order ID', maxLength: 40 }),
+        customer_id: StringColumn({ label: 'Customer ID', maxLength: 40 }),
+        order_date: DateColumn({ label: 'Order Date' }),
+        year: IntegerColumn({ label: 'Year' }),
+        month: IntegerColumn({ label: 'Month' }),
+        quarter: StringColumn({ label: 'Quarter', maxLength: 4 }),
+        day_of_week: StringColumn({ label: 'Day of Week', maxLength: 12 }),
+        product_name: StringColumn({ label: 'Product Name', maxLength: 120 }),
+        category: StringColumn({ label: 'Category', maxLength: 60 }),
+        unit_price_usd: DecimalColumn({ label: 'Unit Price (USD)' }),
+        quantity: IntegerColumn({ label: 'Quantity' }),
+        subtotal_usd: DecimalColumn({ label: 'Subtotal (USD)' }),
+        discount_pct: DecimalColumn({ label: 'Discount %' }),
+        discount_amount_usd: DecimalColumn({ label: 'Discount Amount (USD)' }),
+        shipping_fee_usd: DecimalColumn({ label: 'Shipping Fee (USD)' }),
+        tax_pct: IntegerColumn({ label: 'Tax %' }),
+        tax_amount_usd: DecimalColumn({ label: 'Tax Amount (USD)' }),
+        total_amount_usd: DecimalColumn({ label: 'Total Amount (USD)' }),
+        payment_method: StringColumn({ label: 'Payment Method', maxLength: 60 }),
+        device_used: StringColumn({
+            label: 'Device Used',
+            choices: { Mobile: 'Mobile', Desktop: 'Desktop', Tablet: 'Tablet' },
+        }),
+        delivery_days: IntegerColumn({ label: 'Delivery Days' }),
+        delivery_date: DateColumn({ label: 'Delivery Date' }),
+        order_status: StringColumn({
+            label: 'Order Status',
+            choices: { Delivered: 'Delivered', Returned: 'Returned', Cancelled: 'Cancelled', Processing: 'Processing' },
+        }),
+        returned: BooleanColumn({ label: 'Returned' }),
+        customer_rating: DecimalColumn({ label: 'Customer Rating' }),
+        session_duration_minutes: DecimalColumn({ label: 'Session Duration (min)' }),
+        pages_viewed_before_purchase: IntegerColumn({ label: 'Pages Viewed Before Purchase' }),
+        is_repeat_customer: BooleanColumn({ label: 'Is Repeat Customer' }),
+    },
+})

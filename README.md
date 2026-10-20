@@ -1,12 +1,15 @@
 # 31 — Claude Dashboard
 
-Workspace para construir **dashboards de dados** em HTML estático, usando o Claude Code. O projeto reúne três coisas:
+Workspace para construir **dashboards de dados** usando o Claude Code. O repositório é completo e tem dois produtos:
 
-1. **Dados** (`dataset/`) — CSVs de e-commerce a serem visualizados.
-2. **Design de referência** (`design-system/`) — uma página pronta que define a linguagem visual (tema escuro, cards "glass", grid responsivo) a ser replicada nos dashboards.
-3. **Integração com Excalidraw** (`scripts/`) — scripts para subir/parar o canvas do servidor MCP do Excalidraw, que permite ao Claude desenhar diagramas.
+1. **Dashboard de demonstração local** (`dashboard/`, `index.html`) — HTML estático que roda direto na sua máquina, sem build.
+2. **App ServiceNow** (`servicenow-app/`) — o mesmo dashboard como aplicação escopada (Now SDK), pronta para build/deploy numa instância, com os dados para importar em `dataset/dataset-servicenow/`.
 
-Não há build system nem gerenciador de pacotes no projeto: os dashboards são HTML estático, e o Tailwind é compilado no navegador em tempo de execução.
+Apoio: `dataset/` (CSVs de e-commerce), `design-system/` (design de referência), `nexus-terminal-kit/` (tema NEXUS), `previews/` (capturas) e `scripts/` (Excalidraw MCP).
+
+O lado local não tem build nem gerenciador de pacotes (Tailwind compilado no navegador). Só o `servicenow-app/` usa Node/npm.
+
+> Guia rápido: demo local → [Demo local](#demo-local) · ServiceNow → [Deploy no ServiceNow](#deploy-no-servicenow) · autenticação → [Autenticar na sua instância](#autenticar-na-sua-instância).
 
 ---
 
@@ -17,7 +20,14 @@ Não há build system nem gerenciador de pacotes no projeto: os dashboards são 
 ├── README.md                 # este arquivo
 ├── CLAUDE.md                 # guia para o Claude Code operar neste repo
 ├── .gitignore
+├── index.html                # seletor das 3 variações de dashboard (demo local)
+├── dashboard/                # dashboard local: index.html, variation-a/b.html, data.json
+├── servicenow-app/           # app ServiceNow (Now SDK): src/, scripts/upload-data.mjs, package.json
+├── nexus-terminal-kit/       # tokens, CSS e tema de gráficos do estilo NEXUS
+├── previews/                 # capturas das variações
+├── sobe-http.sh              # atalho: python3 -m http.server 3000
 ├── dataset/                  # dados (CSV)
+│   └── dataset-servicenow/   # .xlsx prontos para importar nas tabelas do app ServiceNow
 │   ├── orders.csv            # ~25k linhas — grão de item de pedido
 │   ├── customers.csv         # ~8k linhas — um registro por cliente
 │   ├── monthly_revenue.csv   # 76 linhas — série mensal pré-agregada
@@ -30,6 +40,86 @@ Não há build system nem gerenciador de pacotes no projeto: os dashboards são 
     ├── excalidraw-status.sh
     └── excalidraw-stop.sh
 ```
+
+---
+
+## Demo local
+
+Sem build. Sirva a raiz do repo e abra no navegador:
+
+```bash
+./sobe-http.sh          # ou: python3 -m http.server 3000
+# http://localhost:3000/             → escolha uma das 3 variações
+# http://localhost:3000/dashboard/   → dashboard principal (lê dashboard/data.json)
+```
+
+`dashboard/data.json` é gerado por `scripts/aggregate.py` a partir dos CSVs de `dataset/`.
+
+---
+
+## Deploy no ServiceNow
+
+App escopada `x_snc_dashboard_se` em `servicenow-app/` (detalhes de arquitetura e API em `servicenow-app/README.md`).
+
+### Pré-requisitos
+
+| Item | Detalhe |
+|---|---|
+| Node.js | ≥ 18 (`node -v`) |
+| npm | vem com o Node |
+| Instância ServiceNow | PDI ou nowdemo, com usuário **admin** (ou role que instale apps escopadas) |
+| Acesso de rede | à instância via HTTPS |
+
+O Now SDK (`@servicenow/sdk` 4.7.2) é dependência do projeto: não precisa instalar globalmente.
+
+### Autenticar na sua instância
+
+O SDK guarda as credenciais no seu computador (fora do repo), sob um **alias**:
+
+```bash
+cd servicenow-app
+npm install
+npx now-sdk auth --add https://SUA-INSTANCIA.service-now.com --type basic --alias minha-inst
+#   informe usuário e senha quando pedir (use --type oauth se a instância exigir SSO/OAuth)
+npx now-sdk auth --use minha-inst     # define como padrão
+npx now-sdk auth --list               # confere
+```
+
+Outros: `npx now-sdk auth --delete <alias>` remove uma credencial.
+
+> **Nunca** coloque senha em arquivo versionado. Use o fluxo acima ou variáveis de ambiente.
+
+### Build e deploy
+
+```bash
+cd servicenow-app
+npm run build      # compila TypeScript e empacota as UI Pages
+npm run deploy     # now-sdk install: instala a app na instância do alias padrão
+```
+
+### Importar os dados (depois do deploy)
+
+As tabelas são criadas vazias pela app. Há duas opções:
+
+**A) Planilhas** — `dataset/dataset-servicenow/*.xlsx`, uma por tabela (`x_snc_dashboard_se_<tabela>.xlsx`). Na instância: *System Import Sets > Load Data* (ou *Import* no menu da lista da tabela). Ordem sugerida: `product_summary`, `monthly_revenue`, `customer`, `order`. Se o `order` completo estourar o limite de upload, use `..._order_parte1/2/3.xlsx`.
+
+**B) Script via Table API** (lê os CSVs de `dataset/`):
+
+```bash
+cd servicenow-app
+export SN_INSTANCE=https://SUA-INSTANCIA.service-now.com
+export SN_USER=admin SN_PASS='sua_senha'      # ou SN_TOKEN=<bearer>; ou arquivo .sn-upload.json (gitignored)
+node scripts/upload-data.mjs --dry            # confere o parse sem enviar
+node scripts/upload-data.mjs                  # envia as 4 tabelas
+node scripts/upload-data.mjs --check          # compara contagens na instância
+```
+
+### Testar
+
+1. Contagens esperadas: `order` ≈ 25 mil, `customer` ≈ 8 mil, `product_summary` 140, `monthly_revenue` 75.
+2. API (logado no navegador, ou com `curl --user`): `https://SUA-INSTANCIA.service-now.com/api/x_snc_dashboard_se/dashboard/data` deve retornar JSON com `kpis`, `sales`, `monthly`, `customers`, `products`.
+3. Abra as UI Pages do app (Aurora, Balanço, Nexus, Portal) e confira KPIs e gráficos.
+4. Se algo falhar: console do navegador e *System Logs > System Log > All*.
 
 ---
 
